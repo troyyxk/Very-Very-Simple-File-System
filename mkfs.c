@@ -105,7 +105,13 @@ static bool a1fs_is_present(void *image)
 {
 	//TODO
 	(void)image;
-	return true;
+	a1fs_superblock *as = (a1fs_superblock *)image;
+	if (as->magic == A1FS_MAGIC){
+		return true;
+	}else{
+		return false;
+	}
+	
 }
 
 
