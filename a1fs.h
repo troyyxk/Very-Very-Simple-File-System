@@ -63,9 +63,14 @@ typedef struct a1fs_superblock
 	/** First Data Block. */
 	uint64_t first_data;
 
-	/** Number of Blocks. */
+	/** Number of inode Blocks. */
+	uint64_t inode_count;
+	/** Number of free inode block. */
+	uint64_t free_inode_count;
+
+	/** Number of data Blocks. */
 	uint64_t data_count;
-	/** Number of free block. */
+	/** Number of free data block. */
 	uint64_t free_data_count;
 
 } a1fs_superblock;
