@@ -1,11 +1,16 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
+#include <unistd.h>
+#include <math.h>
+
 #include "a1fs.h"
+#include "map.h"
 
 // Pointer to the 0th byte of the disk
 unsigned char *disk;
