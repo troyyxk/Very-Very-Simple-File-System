@@ -135,6 +135,22 @@ static bool a1fs_is_present(void *image)
 	}
 }
 
+int init_super(a1fs_superblock *sb, int n_sb, int n_ib, int n_db, int n_inode, int n_data)
+{
+	sb->magic = A1FS_MAGIC;
+
+	sb->first_ib = n_sb;
+	sb->ib_count = n_ib;
+	sb->first_db = n_sb + n_ib;
+	sb->db_count = n_db;
+	sb->first_inode = n_sb + n_ib + n_db;
+	sb->first_data = n_sb + n_ib + n_db + n_inode;
+
+	sb->data_count = n_data;
+	sb->free_bock_count = 0;
+	return 0;
+}
+
 /**
  * Format the image into a1fs.
  *
@@ -192,22 +208,6 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	// Init Inodes ?
 
 	return true;
-}
-
-int init_super(a1fs_superblock *sb, int n_sb, int n_ib, int n_db, int n_inode, int n_data)
-{
-	sb->magic = A1FS_MAGIC;
-
-	sb->first_ib = n_sb;
-	sb->ib_count = n_ib;
-	sb->first_db = n_sb + n_ib;
-	sb->db_count = n_db;
-	sb->first_inode = n_sb + n_ib + n_db;
-	sb->first_data = n_sb + n_ib + n_db + n_inode;
-
-	sb->data_count = n_data;
-	sb->free_bock_count = 0;
-	return 0;
 }
 
 int main(int argc, char *argv[])
