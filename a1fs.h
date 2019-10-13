@@ -23,7 +23,6 @@
 #include <limits.h>
 #include <sys/stat.h>
 
-
 /**
  * a1fs block size in bytes. You are not allowed to change this value.
  *
@@ -40,28 +39,46 @@ typedef uint32_t a1fs_blk_t;
 /** Inode number type. */
 typedef uint32_t a1fs_ino_t;
 
-
 /** Magic value that can be used to identify an a1fs image. */
 #define A1FS_MAGIC 0xC5C369A1C5C369A1ul
 
 /** a1fs superblock. */
-typedef struct a1fs_superblock {
+typedef struct a1fs_superblock
+{
 	/** Must match A1FS_MAGIC. */
 	uint64_t magic;
 	/** File system size in bytes. */
 	uint64_t size;
 
-	//TODO
+#pragma region addin Super
+	/** First Inode Bitmap. */
+	uint64_t first_ib;
+	/** Nubmer of Inode Bitmap. */
+	int ib_count;
+	/** First Data Bitmap. */
+	uint64_t first_db;
+	/** Nubmer of Data Bitmap. */
+	int db_count;
+	/** First Inode. */
+	uint64_t first_inode;
+	/** First Data Block. */
+	uint64_t first_data;
+
+	/** Number of Blocks. */
+	uint64_t data_count;
+	/** Number of free block. */
+	uint64_t free_data_count;
+#pragma region addin Super
 
 } a1fs_superblock;
 
 // Superblock must fit into a single block
 static_assert(sizeof(a1fs_superblock) <= A1FS_BLOCK_SIZE,
-              "superblock is too large");
-
+			  "superblock is too large");
 
 /** Extent - a contiguous range of blocks. */
-typedef struct a1fs_extent {
+typedef struct a1fs_extent
+{
 	/** Starting block of the extent. */
 	a1fs_blk_t start;
 	/** Number of blocks in the extent. */
@@ -69,9 +86,9 @@ typedef struct a1fs_extent {
 
 } a1fs_extent;
 
-
 /** a1fs inode. */
-typedef struct a1fs_inode {
+typedef struct a1fs_inode
+{
 	/** File mode. */
 	mode_t mode;
 	/** Reference count (number of hard links). */
@@ -94,7 +111,6 @@ typedef struct a1fs_inode {
 // A single block must fit an integral number of inodes
 static_assert(A1FS_BLOCK_SIZE % sizeof(a1fs_inode) == 0, "invalid inode size");
 
-
 /** Maximum file name (path component) length. Includes the null terminator. */
 #define A1FS_NAME_MAX 252
 
@@ -102,7 +118,8 @@ static_assert(A1FS_BLOCK_SIZE % sizeof(a1fs_inode) == 0, "invalid inode size");
 #define A1FS_PATH_MAX PATH_MAX
 
 /** Fixed size directory entry structure. */
-typedef struct a1fs_dentry {
+typedef struct a1fs_dentry
+{
 	/** Inode number. */
 	a1fs_ino_t ino;
 	/** File name. A null-terminated string. */
