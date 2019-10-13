@@ -50,7 +50,7 @@ typedef struct a1fs_superblock
 	/** File system size in bytes. */
 	uint64_t size;
 
-#pragma region addin Super
+#region addin Super
 	/** First Inode Bitmap. */
 	uint64_t first_ib;
 	/** Nubmer of Inode Bitmap. */
@@ -68,7 +68,7 @@ typedef struct a1fs_superblock
 	uint64_t data_count;
 	/** Number of free block. */
 	uint64_t free_data_count;
-#pragma region addin Super
+#region addin Super
 
 } a1fs_superblock;
 
