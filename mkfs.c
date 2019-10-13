@@ -147,7 +147,7 @@ int init_super(a1fs_superblock *sb, int n_sb, int n_ib, int n_db, int n_inode, i
 	sb->first_data = n_sb + n_ib + n_db + n_inode;
 
 	sb->data_count = n_data;
-	sb->free_bock_count = 0;
+	sb->free_data_count = 0;
 	return 0;
 }
 
