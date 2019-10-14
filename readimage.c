@@ -62,9 +62,22 @@ int main(int argc, char **argv)
     printf("    Number of data Blocks: %d\n", sb->dblock_count);
     printf("    Number of free data block: %d\n", sb->free_dblock_count);
 
+    // Print Inode Bitmap
+    printf("Inode bitmap: ");
+    unsigned char *inode_bitmap = (unsigned char *)(disk + sb->first_ib * A1FS_BLOCK_SIZE);
+    for (int bit = 0; bit <= sb->inode_count; bit++)
+    {
+        printf("%d", (inode_bitmap[bit] & (1 << bit)) > 0);
+        if (bit != 0 && bit % 5 == 0)
+        {
+            printf(" ");
+        }
+    }
+    printf("\n");
+
+    // Print Block Bitmap
     printf("Block bitmap: ");
     unsigned char *block_bitmap = (unsigned char *)(disk + sb->first_db * A1FS_BLOCK_SIZE);
-    // Print bits
     for (int bit = 0; bit <= sb->dblock_count; bit++)
     {
         printf("%d", (block_bitmap[bit] & (1 << bit)) > 0);
@@ -75,7 +88,7 @@ int main(int argc, char **argv)
     }
     printf("\n");
 
-    printf("Inode bitmap: ");
+
 
     return 0;
 }
