@@ -41,9 +41,9 @@ int main(int argc, char **argv)
     a1fs_superblock *sb = (a1fs_superblock *)(disk);
 
     printf("Super Block:\n");
-    printf("Size: %d\n", (int)sb->size)
+    printf("Size: %d\n", (int)sb->size);
 
-        printf("    Address:\n");
+    printf("    Address:\n");
     printf("    First Inode Bitmap: %d\n", sb->first_ib);
     printf("    First Data Bitmap: %d\n", sb->first_db);
     printf("    First Inode: %d\n", sb->first_inode);
