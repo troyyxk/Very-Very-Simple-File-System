@@ -98,12 +98,9 @@ typedef struct a1fs_inode
 	/** File mode. */
 	mode_t mode;
 	/** Reference count (number of hard links). */
-	uint32_t links;
+	uint64_t links;
 	/** File size in bytes. */
 	uint64_t size;
-
-	/** Pointer to the extent block. */
-	short ext_block;
 
 	/**
 	 * Last modification timestamp.
@@ -113,8 +110,12 @@ typedef struct a1fs_inode
 	 */
 	struct timespec mtime;
 
-	//TODO
-
+	/** Number of Extend. */
+	short extend_count;
+	/** Extend Block*/
+	a1fs_extent *extent_block;
+	/** Number of Entry in a Directory. */
+	short dentry_count;
 } a1fs_inode;
 
 // A single block must fit an integral number of inodes
