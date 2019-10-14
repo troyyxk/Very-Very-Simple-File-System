@@ -103,7 +103,7 @@ typedef struct a1fs_inode
 	uint64_t size;
 
 	/** Pointer to the extent block. */
-	unsigned int ext_block;
+	short ext_block;
 
 	/**
 	 * Last modification timestamp.
