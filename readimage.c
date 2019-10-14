@@ -41,6 +41,8 @@ int main(int argc, char **argv)
     a1fs_superblock *sb = (a1fs_superblock *)(disk);
 
     printf("Super Block:\n");
+
+    // in byte
     printf("Size: %d\n", (int)sb->size);
 
     printf("    Address:\n");
@@ -52,8 +54,8 @@ int main(int argc, char **argv)
     printf("\n");
 
     printf("    Amounts:\n");
-    printf("    Nubmer of Inode Bitmap blocks: %d\n", sb->ib_count);
-    printf("    Nubmer of Data Bitmap blocks: %d\n", sb->db_count);
+    printf("    Number of Inode Bitmap blocks: %d\n", sb->ib_count);
+    printf("    Number of Data Bitmap blocks: %d\n", sb->db_count);
     printf("    Number of inode Blocks: %d\n", sb->inode_count);
     printf("    Number of free inode block: %d\n", sb->free_inode_count);
     printf("    Number of data Blocks: %d\n", sb->data_count);
