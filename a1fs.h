@@ -62,7 +62,7 @@ typedef struct a1fs_superblock
 
 	/** Amount */
 	/** Number of Inodes. */
-    int inode_count
+    int inode_count;
 	/** Number of Inode Bitmap blocks. */
 	int ib_count;
 	/** Number of Data Bitmap blocks. */
