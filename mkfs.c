@@ -188,7 +188,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	int n_iblock = ceil((double)n_inode * inode_size / (double)A1FS_BLOCK_SIZE);
 	// nubmer of data block is the total number of:
 	// super block
-	// inode bitmap
+	// inode bitmap block
 	// data bitmap
 	// inode block
 	int n_data = n_block - n_sb - n_ib - n_db - n_iblock;
@@ -205,7 +205,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 
 	// Init Inode Bitmap
 	unsigned char *inode_bitmap = (unsigned char *)(image + sb->first_ib * A1FS_BLOCK_SIZE);
-	for (int i = 0; i < sb->ib_count; i++)
+	for (int i = 0; i < sb->inode_count; i++)
 	{
 		inode_bitmap[i] = 0;
 	}
