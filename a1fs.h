@@ -52,29 +52,29 @@ typedef struct a1fs_superblock
 
 	/** Address */
 	/** First Inode Bitmap. */
-	int first_ib;
+	unsigned int first_ib;
 	/** First Data Bitmap. */
-	int first_db;
+	unsigned int first_db;
 	/** First Inode. */
-	int first_inode;
+	unsigned int first_inode;
 	/** First Data Block. */
-	int first_data;
+	unsigned int first_data;
 
 	/** Amount */
 	/** Number of Inodes. */
-    int inode_count;
+	unsigned int inode_count;
 	/** Number of Inode Bitmap blocks. */
-	int ib_count;
+	unsigned int ib_count;
 	/** Number of Data Bitmap blocks. */
-	int db_count;
+	unsigned int db_count;
 	/** Number of inode Blocks. */
-	int iblock_count;
+	unsigned int iblock_count;
 	/** Number of free inode block. */
-	int free_iblock_count;
+	unsigned int free_iblock_count;
 	/** Number of data Blocks. */
-	int dblock_count;
+	unsigned int dblock_count;
 	/** Number of free data block. */
-	int free_dblock_count;
+	unsigned int free_dblock_count;
 
 } a1fs_superblock;
 
@@ -102,6 +102,9 @@ typedef struct a1fs_inode
 	/** File size in bytes. */
 	uint64_t size;
 
+	/** Pointer to the extent block. */
+	unsigned int ext_block;
+
 	/**
 	 * Last modification timestamp.
 	 *
@@ -119,6 +122,20 @@ static_assert(A1FS_BLOCK_SIZE % sizeof(a1fs_inode) == 0, "invalid inode size");
 
 /** Maximum file name (path component) length. Includes the null terminator. */
 #define A1FS_NAME_MAX 252
+
+/**
+ * Ext2 directory file types.  Only the low 3 bits are used.  The
+ * other bits are reserved for now.
+ */
+#define EXT2_FT_UNKNOWN 0  /* Unknown File Type */
+#define EXT2_FT_REG_FILE 1 /* Regular File */
+#define EXT2_FT_DIR 2	  /* Directory File */
+#define EXT2_FT_SYMLINK 7  /* Symbolic Link */
+/* Other types, irrelevant for the assignment */
+/* #define EXT2_FT_CHRDEV   3 */ /* Character Device */
+/* #define EXT2_FT_BLKDEV   4 */ /* Block Device */
+/* #define EXT2_FT_FIFO     5 */ /* Buffer File */
+/* #define EXT2_FT_SOCK     6 */ /* Socket File */
 
 /** Maximum file path length. Includes the null terminator. */
 #define A1FS_PATH_MAX PATH_MAX

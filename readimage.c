@@ -88,6 +88,21 @@ int main(int argc, char **argv)
     }
     printf("\n");
 
+    // Print Inode
+    printf("Inode bitmap: ");
+    void *inode_block = (void *)(disk + sb->first_inode*A1FS_BLOCK_SIZE);
+    a1fs_inode *inode;
+    for (int bit = 0; bit < sb->inode_count; bit++)
+    {
+        if((inode_bitmap[bit] & (1 << bit)) > 0){  // bit map is 1
+            inode = (void *)(inode_block + bit* sizeof((a1fs_inode)));
+            // bitmap count starts form 0
+            printf("Inode: Inode#: %d Number of Link: %d\n Extend Block: %d\n", bit, inode->links, inode->ext_block);
+        }
+    }
+    printf("\n");
+
+
 
 
     return 0;
