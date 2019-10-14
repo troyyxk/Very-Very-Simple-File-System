@@ -179,6 +179,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	int n_inode = opts->n_inodes;
 
 	int n_ib = ceil((double)n_inode / ((double)A1FS_BLOCK_SIZE * 8));
+	pritnf("n_ib: %d\n", n_ib);
 	int n_db = ceil((double)n_block / ((double)A1FS_BLOCK_SIZE * 8)); // 需要改一下
 
 	// nubmer of data block is the total number of:
