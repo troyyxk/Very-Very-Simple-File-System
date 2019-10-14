@@ -95,9 +95,9 @@ int main(int argc, char **argv)
     for (int bit = 0; bit < sb->inode_count; bit++)
     {
         if((inode_bitmap[bit] & (1 << bit)) > 0){  // bit map is 1
-            inode = (void *)inode_block + bit* sizeof((a1fs_inode));
+            inode = (void *)inode_block + bit* sizeof(a1fs_inode);
             // bitmap count starts form 0
-            printf("Inode: Inode#: %d Number of Link: %ld\n Extend Block: %d\n", bit, inode->links, inode->ext_block);
+            printf("Inode: Inode#: %d Number of Link: %ld\n Extend Block: %ld\n", bit, inode->links, inode->ext_block);
         }
     }
     printf("\n");
