@@ -161,7 +161,7 @@ int init_super(a1fs_superblock *sb, int n_inode, int n_sb, int n_ib, int n_db, i
 /** The purpose of this function is solely for creating the initial inode for the file system. */
 int init_inode(a1fs_superblock *sb, void *image, unsigned char *inode_bitmap)
 {
-	a1fs_inode *inode = (void *)image + (A1FS_BLOCK_SIZE * sb->first_ib);
+	a1fs_inode *inode = (void *)image + (A1FS_BLOCK_SIZE * sb->first_inode);
 	inode->links = 2;
 	inode->ext_block = sb->first_db;
 
