@@ -189,7 +189,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	// inode bitmap
 	// data bitmap
 	// inode block
-	int n_data = n_block - n_sb - n_inode - n_ib - n_db;
+	int n_data = n_block - n_sb - n_ib - n_db - n_iblock;
 
 	// /** Address */
 
