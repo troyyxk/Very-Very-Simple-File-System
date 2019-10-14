@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     for (int bit = 0; bit < sb->dblock_count; bit++)
     {
         printf("%d", (block_bitmap[bit] & (1 << bit)) > 0);
-        if (bit % 5 == 0)
+        if (bit != 0 && bit % 5 == 0)
         {
             printf(" ");
         }
