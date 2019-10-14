@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 
     a1fs_superblock *sb = (a1fs_superblock *)(disk);
 
-    printf("Super Block:\n")
+    printf("Super Block:\n");
 
     printf("    Address:\n");
     printf("    First Inode Bitmap: %d\n", sb->first_ib);
