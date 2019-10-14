@@ -139,18 +139,20 @@ int init_super(a1fs_superblock *sb, int n_sb, int n_ib, int n_db, int n_inode, i
 {
 	sb->magic = A1FS_MAGIC;
 
+	// Address
 	sb->first_ib = n_sb;
-	sb->ib_count = n_ib;
 	sb->first_db = n_sb + n_ib;
-	sb->db_count = n_db;
 	sb->first_inode = n_sb + n_ib + n_db;
 	sb->first_data = n_sb + n_ib + n_db + n_inode;
 
+	// Amount
+	sb->ib_count = n_ib;
+	sb->db_count = n_db;
 	sb->inode_count = n_inode;
 	sb->free_inode_count = n_inode;
-
 	sb->data_count = n_data;
 	sb->free_data_count = n_data;
+
 	return 0;
 }
 
@@ -176,8 +178,8 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	int n_sb = 1;
 	int n_inode = opts->n_inodes;
 
-	int n_ib = (double)n_inode / ((double)A1FS_BLOCK_SIZE * 8);
-	int n_db = (double)n_block / ((double)A1FS_BLOCK_SIZE * 8); // 需要改一下
+	int n_ib = ceiling((double)n_inode / ((double)A1FS_BLOCK_SIZE * 8));
+	int n_db = ceiling((double)n_block / ((double)A1FS_BLOCK_SIZE * 8)); // 需要改一下
 
 	// nubmer of data block is the total number of:
 	// super block
