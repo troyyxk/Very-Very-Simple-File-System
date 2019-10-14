@@ -159,11 +159,13 @@ int init_super(a1fs_superblock *sb, int n_inode, int n_sb, int n_ib, int n_db, i
 }
 
 /** The purpose of this function is solely for creating the initial inode for the file system. */
-int init_inode(a1fs_superblock *sb, void *image)
+int init_inode(a1fs_superblock *sb, void *image, unsigned char *inode_bitmap)
 {
 	a1fs_inode *inode = (void *)image + (A1FS_BLOCK_SIZE * sb->first_ib);
 	inode->links = 2;
 	inode->ext_block = sb->first_db;
+
+	inode_bitmap[0] = 1;
 
 	return 0;
 }
@@ -205,6 +207,20 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 
 	// /** Address */
 
+    // Init Inode Bitmap
+    unsigned char *inode_bitmap = (unsigned char *)(image + sb->first_ib * A1FS_BLOCK_SIZE);
+    for (int i = 0; i < sb->inode_count; i++)
+    {
+        inode_bitmap[i] = 0;
+    }
+
+    // Init Data Bitmap
+    unsigned char *data_bitmap = (unsigned char *)(image + sb->first_db * A1FS_BLOCK_SIZE);
+    for (int i = 0; i < sb->db_count; i++)
+    {
+        data_bitmap[i] = 0;
+    }
+
 	// Init Super Block
 	a1fs_superblock *sb = (void *)image + (A1FS_BLOCK_SIZE * 0);
 	if (init_super(sb, n_inode, n_sb, n_ib, n_db, n_iblock, n_data, size) != 0)
@@ -213,25 +229,13 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 		return false;
 	}
 
-	if (init_inode(sb, image) != 0)
+	if (init_inode(sb, image, inode_bitmap) != 0)
 	{
 		fprintf(stderr, "Failed to Init Inode\n");
 		return false;
 	}
 
-	// Init Inode Bitmap
-	unsigned char *inode_bitmap = (unsigned char *)(image + sb->first_ib * A1FS_BLOCK_SIZE);
-	for (int i = 0; i < sb->inode_count; i++)
-	{
-		inode_bitmap[i] = 0;
-	}
 
-	// Init Data Bitmap
-	unsigned char *data_bitmap = (unsigned char *)(image + sb->first_db * A1FS_BLOCK_SIZE);
-	for (int i = 0; i < sb->db_count; i++)
-	{
-		data_bitmap[i] = 0;
-	}
 
 	// Init Inodes ?
 
