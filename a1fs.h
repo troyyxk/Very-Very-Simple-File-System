@@ -52,29 +52,29 @@ typedef struct a1fs_superblock
 
 	/** Address */
 	/** First Inode Bitmap. */
-	unsigned int first_ib;
+	int first_ib;
 	/** First Data Bitmap. */
-	unsigned int first_db;
+	int first_db;
 	/** First Inode. */
-	unsigned int first_inode;
+	int first_inode;
 	/** First Data Block. */
-	unsigned int first_data;
+	int first_data;
 
 	/** Amount */
 	/** Number of Inodes. */
-	unsigned int inode_count;
+	int inode_count;
 	/** Number of Inode Bitmap blocks. */
-	unsigned int ib_count;
+	int ib_count;
 	/** Number of Data Bitmap blocks. */
-	unsigned int db_count;
+	int db_count;
 	/** Number of inode Blocks. */
-	unsigned int iblock_count;
+	int iblock_count;
 	/** Number of free inode block. */
-	unsigned int free_iblock_count;
+	int free_iblock_count;
 	/** Number of data Blocks. */
-	unsigned int dblock_count;
+	int dblock_count;
 	/** Number of free data block. */
-	unsigned int free_dblock_count;
+	int free_dblock_count;
 
 } a1fs_superblock;
 
@@ -111,7 +111,7 @@ typedef struct a1fs_inode
 	struct timespec mtime;
 
 	/** Number of Extend. */
-	short extend_count;
+	short ext_count;
 	/** Extend Block*/
 	a1fs_extent *extent_block;
 	/** Number of Entry in a Directory. */

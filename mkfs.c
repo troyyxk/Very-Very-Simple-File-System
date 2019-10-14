@@ -159,7 +159,7 @@ int init_super(a1fs_superblock *sb, int n_inode, int n_sb, int n_ib, int n_db, i
 }
 
 /** The purpose of this function is solely for creating the initial inode for the file system. */
-int init_inode(a1fs_superblock *sb)
+int init_inode(a1fs_superblock *sb, void *image)
 {
 	a1fs_inode *inode = (void *)image + (A1FS_BLOCK_SIZE * sb->first_ib);
 	inode->links = 2;
@@ -213,7 +213,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 		return false;
 	}
 
-	if (init_inode(sb) != 0)
+	if (init_inode(sb, image) != 0)
 	{
 		fprintf(stderr, "Failed to Init Inode\n");
 		return false;
