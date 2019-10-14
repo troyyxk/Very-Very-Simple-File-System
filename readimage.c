@@ -54,12 +54,17 @@ int main(int argc, char **argv)
     printf("\n");
 
     printf("    Amounts:\n");
+    printf("    Number of Inodes: %d\n", sb->inode_count);
     printf("    Number of Inode Bitmap blocks: %d\n", sb->ib_count);
     printf("    Number of Data Bitmap blocks: %d\n", sb->db_count);
-    printf("    Number of inode Blocks: %d\n", sb->inode_count);
-    printf("    Number of free inode block: %d\n", sb->free_inode_count);
-    printf("    Number of data Blocks: %d\n", sb->data_count);
-    printf("    Number of free data block: %d\n", sb->free_data_count);
+    printf("    Number of inode Blocks: %d\n", sb->iblock_count);
+    printf("    Number of free inode block: %d\n", sb->free_iblock_count);
+    printf("    Number of data Blocks: %d\n", sb->dblock_count);
+    printf("    Number of free data block: %d\n", sb->free_dblock_count);
+
+    printf("Block bitmap: ");
+
+    printf("Inode bitmap: ");
 
     return 0;
 }

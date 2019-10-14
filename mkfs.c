@@ -135,7 +135,7 @@ static bool a1fs_is_present(void *image)
 	}
 }
 
-int init_super(a1fs_superblock *sb, int n_sb, int n_ib, int n_db, int n_iblock, int n_data, size_t size)
+int init_super(a1fs_superblock *sb, int n_inode, int n_sb, int n_ib, int n_db, int n_iblock, int n_data, size_t size)
 {
 	sb->magic = A1FS_MAGIC;
 	sb->size = size;
@@ -147,12 +147,13 @@ int init_super(a1fs_superblock *sb, int n_sb, int n_ib, int n_db, int n_iblock, 
 	sb->first_data = n_sb + n_ib + n_db + n_iblock;
 
 	// Amount
+	sb->inode_count = n_inode;
 	sb->ib_count = n_ib;
 	sb->db_count = n_db;
-	sb->inode_count = n_iblock;
-	sb->free_inode_count = n_iblock;
-	sb->data_count = n_data;
-	sb->free_data_count = n_data;
+	sb->iblock_count = n_iblock;
+	sb->free_iblock_count = n_iblock;
+	sb->dblock_count = n_data;
+	sb->free_dblock_count = n_data;
 
 	return 0;
 }
@@ -196,7 +197,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 
 	// Init Super Block
 	a1fs_superblock *sb = (void *)image + (A1FS_BLOCK_SIZE * 0);
-	if (init_super(sb, n_sb, n_ib, n_db, n_iblock, n_data, size) != 0)
+	if (init_super(sb, n_inode, n_sb, n_ib, n_db, n_iblock, n_data, size) != 0)
 	{
 		fprintf(stderr, "Failed to Init Super Block\n");
 		return false;
