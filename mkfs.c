@@ -163,7 +163,7 @@ int init_inode(a1fs_superblock *sb, void *image)
 {
 	a1fs_inode *inode = (void *)image + (A1FS_BLOCK_SIZE * sb->first_ib);
 	inode->links = 2;
-	inode->ext_block = (void *)image + (sb->first_db * A1FS_BLOCK_SIZE);
+	inode->ext_block = sb->first_db;
 
 	return 0;
 }
