@@ -113,7 +113,7 @@ typedef struct a1fs_inode
 	/** Number of Extend. */
 	short ext_count;
 	/** Extend Block*/
-	a1fs_extent *extent_block;
+	a1fs_extent *ext_block;
 	/** Number of Entry in a Directory. */
 	short dentry_count;
 } a1fs_inode;
