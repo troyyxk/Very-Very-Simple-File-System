@@ -135,7 +135,7 @@ static bool a1fs_is_present(void *image)
 	}
 }
 
-int init_super(a1fs_superblock *sb, int n_sb, int n_ib, int n_db, int n_inode, int n_data)
+int init_super(a1fs_superblock *sb, int n_sb, int n_ib, int n_db, int n_iblock, int n_data)
 {
 	sb->magic = A1FS_MAGIC;
 
@@ -143,13 +143,13 @@ int init_super(a1fs_superblock *sb, int n_sb, int n_ib, int n_db, int n_inode, i
 	sb->first_ib = n_sb;
 	sb->first_db = n_sb + n_ib;
 	sb->first_inode = n_sb + n_ib + n_db;
-	sb->first_data = n_sb + n_ib + n_db + n_inode;
+	sb->first_data = n_sb + n_ib + n_db + n_iblock;
 
 	// Amount
 	sb->ib_count = n_ib;
 	sb->db_count = n_db;
-	sb->inode_count = n_inode;
-	sb->free_inode_count = n_inode;
+	sb->inode_count = n_iblock;
+	sb->free_inode_count = n_iblock;
 	sb->data_count = n_data;
 	sb->free_data_count = n_data;
 
@@ -174,14 +174,16 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	(void)size; // The size of the image in byte.
 	(void)opts;
 
+	/** Amount */
+
 	int n_block = (double)size / (double)A1FS_BLOCK_SIZE;
 	int n_sb = 1;
 	int n_inode = opts->n_inodes;
-
 	int n_ib = ceil((double)n_inode / ((double)A1FS_BLOCK_SIZE * 8));
-	printf("n_ib: %d\n", n_ib);
 	int n_db = ceil((double)n_block / ((double)A1FS_BLOCK_SIZE * 8)); // 需要改一下
 
+	// in byte
+	int n_iblock = ceil((double)n_inode * inode_size / (double)A1FS_BLOCK_SIZE);
 	// nubmer of data block is the total number of:
 	// super block
 	// inode bitmap
@@ -189,9 +191,11 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	// inode block
 	int n_data = n_block - n_sb - n_inode - n_ib - n_db;
 
+	// /** Address */
+
 	// Init Super Block
 	a1fs_superblock *sb = (void *)image + (A1FS_BLOCK_SIZE * 0);
-	if (init_super(sb, n_sb, n_ib, n_db, n_inode, n_data) != 0)
+	if (init_super(sb, n_sb, n_ib, n_db, n_iblock, n_data) != 0)
 	{
 		fprintf(stderr, "Failed to Init Super Block\n");
 		return false;
