@@ -39,21 +39,24 @@ int main(int argc, char **argv)
     }
 
     a1fs_superblock *sb = (a1fs_superblock *)(disk);
-    printf("Inodes: %d\n", sb->ib_count);
-    printf("Blocks: %d\n", sb->db_count);
 
-    // Add the caption for the block group:
-    // printf("Block group:\n");
+    printf("Super Block:\n")
 
-    // Actual printing of block numbers
-    // struct ext2_group_desc *sb = (struct ext2_group_desc *)(disk + 1024 * 2);
-    printf("    inode bitmap: %d\n", sb->first_ib);
-    printf("    block bitmap: %d\n", sb->first_db);
-    printf("    inode table: %d\n", sb->first_inode);
-    printf("    data start: %d\n", sb->first_data);
-    printf("    free inode block: %d\n", sb->free_inode_count);
-    printf("    free data block: %d\n", sb->free_data_count);
-    // printf("    used_dirs: %d\n", sb->bg_used_dirs_count);
+    printf("    Address:\n");
+    printf("    First Inode Bitmap: %d\n", sb->first_ib);
+    printf("    First Data Bitmap: %d\n", sb->first_db);
+    printf("    First Inode: %d\n", sb->first_inode);
+    printf("    First Data Block: %d\n", sb->first_data);
+
+    printf("\n");
+
+    printf("    Amounts:\n");
+    printf("    Nubmer of Inode Bitmap blocks: %d\n", sb->ib_count);
+    printf("    Nubmer of Data Bitmap blocks: %d\n", sb->db_count);
+    printf("    Number of inode Blocks: %d\n", sb->inode_count);
+    printf("    Number of free inode block: %d\n", sb->free_inode_count);
+    printf("    Number of data Blocks: %d\n", sb->data_count);
+    printf("    Number of free data block: %d\n", sb->free_data_count);
 
     return 0;
 }

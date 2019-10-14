@@ -50,24 +50,25 @@ typedef struct a1fs_superblock
 	/** File system size in bytes. */
 	uint64_t size;
 
+	/** Address */
 	/** First Inode Bitmap. */
 	int first_ib;
-	/** Nubmer of Inode Bitmap. */
-	int ib_count;
 	/** First Data Bitmap. */
 	int first_db;
-	/** Nubmer of Data Bitmap. */
-	int db_count;
 	/** First Inode. */
 	int first_inode;
 	/** First Data Block. */
 	int first_data;
 
+	/** Amount */
+	/** Nubmer of Inode Bitmap blocks. */
+	int ib_count;
+	/** Nubmer of Data Bitmap blocks. */
+	int db_count;
 	/** Number of inode Blocks. */
 	int inode_count;
 	/** Number of free inode block. */
 	int free_inode_count;
-
 	/** Number of data Blocks. */
 	int data_count;
 	/** Number of free data block. */
