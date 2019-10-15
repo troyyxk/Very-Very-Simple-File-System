@@ -165,7 +165,8 @@ int init_inode(a1fs_superblock *sb, void *image, unsigned char *inode_bitmap)
 	inode->mode = S_IFDIR;
 	inode->links = 2;
 	inode->ext_block = sb->first_data;
-	inode->ext_count = 2;
+	inode->ext_count = 1;
+	inode->dentry_count = 2;
 
 	inode_bitmap[0] = 1;
 

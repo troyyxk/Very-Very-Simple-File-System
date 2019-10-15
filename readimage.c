@@ -117,7 +117,13 @@ int main(int argc, char **argv)
                 for (int i = 0; i < inode->ext_count; i++)
                 {
                     cur_extent = (void *)first_extent + (i * sizeof(a1fs_extent));
-                    printf("Inode number: %d, Name: %s", cur_extent->ino, cur_extent->name);
+                    a1fs_dentry *first_entry = (void *)disk + (cur_extent->start);
+                    a1fs_dentry *cur_entry;
+                    for (int j = 0; j < inode->dentry_count; j++)
+                    {
+                        cur_entry = (void *)first_entry + (j * sizeof(a1fs_dentry));
+                        printf("Inode number: %d, Name: %s", cur_entry->ino, cur_entry->name);
+                    }
                 }
             }
             // bitmap count starts form 0
