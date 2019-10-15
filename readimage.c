@@ -11,10 +11,22 @@
 
 #include "a1fs.h"
 #include "map.h"
-#include "util.h"
 
 // Pointer to the 0th byte of the disk
 unsigned char *disk;
+
+/** Print Bitmap */
+int print_bitmap(unsigned char *bitmap, int size){
+    for (int bit = 0; bit < size; bit++)
+    {
+        printf("%d", (bitmap[bit] & (1 << bit)) > 0);
+        if ((bit + 1) % 5 == 0)
+        {
+            printf(" ");
+        }
+    }
+    return 0;
+}
 
 int main(int argc, char **argv)
 {

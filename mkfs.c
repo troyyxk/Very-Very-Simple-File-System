@@ -26,7 +26,7 @@
 
 #include "a1fs.h"
 #include "map.h"
-#include "util.h"
+#include "readimage.c"
 
 /** Command line options. */
 typedef struct mkfs_opts
