@@ -27,6 +27,20 @@
 #include "a1fs.h"
 #include "map.h"
 
+/** Print Bitmap */
+int print_bitmap(unsigned char *bitmap, int size)
+{
+	for (int bit = 0; bit < size; bit++)
+	{
+		printf("%d", (bitmap[bit] & (1 << bit)) > 0);
+		if ((bit + 1) % 5 == 0)
+		{
+			printf(" ");
+		}
+	}
+	return 0;
+}
+
 /** Command line options. */
 typedef struct mkfs_opts
 {
@@ -179,8 +193,13 @@ int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
 	a1fs_extent *extend = (void *)image + (A1FS_BLOCK_SIZE * sb->first_data);
 	extend->start = sb->first_data + 1;
 	extend->count = 1;
-	
+
 	printf("Init Extent, Start: %d, Count: %d\n", extend->start, extend->count);
+    print_bitmap(data_bitmap, sb->dblock_count);
+    printf("\n");
+    data_bitmap[0] = data_bitmap[0] | 1;
+	print_bitmap(data_bitmap, sb->dblock_count);
+    printf("\n");
 
 	a1fs_dentry *entry1 = (void *)image + (A1FS_BLOCK_SIZE * extend->start);
 	entry1->ino = 0;
@@ -189,9 +208,11 @@ int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
 	a1fs_dentry *entry2 = (void *)entry1 + (sizeof(a1fs_dentry));
 	entry2->ino = 0;
 	strcpy(entry2->name, "..");
-
-	data_bitmap[0] = 1;
-	data_bitmap[1] = 1;
+	
+    data_bitmap[1] = data_bitmap[1] | 1;
+// data_bitmap[1] = 1;
+	print_bitmap(data_bitmap, sb->dblock_count);
+    printf("\n");
 
 	return 0;
 }

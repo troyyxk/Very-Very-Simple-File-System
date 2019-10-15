@@ -11,10 +11,22 @@
 
 #include "a1fs.h"
 #include "map.h"
-#include "util.h"
 
 // Pointer to the 0th byte of the disk
 unsigned char *disk;
+
+/** Print Bitmap */
+int print_bitmap(unsigned char *bitmap, int size){
+    for (int bit = 0; bit < size; bit++)
+    {
+        printf("%d", (bitmap[bit] & (1 << bit)) > 0);
+        if ((bit + 1) % 5 == 0)
+        {
+            printf(" ");
+        }
+    }
+    return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -125,7 +137,7 @@ int main(int argc, char **argv)
                 {
                     cur_extent = (void *)first_extent + (i * sizeof(a1fs_extent));
                     printf("Extend Number: %d, Start: %d, Count: %d\n", i, cur_extent->start, cur_extent->count);
-                    a1fs_dentry *first_entry = (void *)disk + (cur_extent->start);
+                    a1fs_dentry *first_entry = (void *)disk + (A1FS_BLOCK_SIZE * cur_extent->start);
                     a1fs_dentry *cur_entry;
                     for (int j = 0; j < inode->dentry_count; j++)
                     {
