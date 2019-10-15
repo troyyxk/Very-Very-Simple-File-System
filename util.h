@@ -42,3 +42,16 @@ static inline size_t align_up(size_t x, size_t alignment)
 	assert(is_powerof2(alignment));
 	return (x + alignment - 1) & (~alignment + 1);
 }
+
+/** Print Bitmap */
+int print_bitmap(unsigned char *bitmap, int size){
+    for (int bit = 0; bit < size; bit++)
+    {
+        printf("%d", (bitmap[bit] & (1 << bit)) > 0);
+        if ((bit + 1) % 5 == 0)
+        {
+            printf(" ");
+        }
+    }
+    return 0;
+}
