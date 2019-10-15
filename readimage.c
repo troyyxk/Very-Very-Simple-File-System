@@ -62,6 +62,8 @@ int main(int argc, char **argv)
     printf("    Number of data Blocks: %d\n", sb->dblock_count);
     printf("    Number of free data block: %d\n", sb->free_dblock_count);
 
+    printf("\n");
+
     // Print Inode Bitmap
     printf("Inode bitmap: ");
     unsigned char *inode_bitmap = (unsigned char *)(disk + sb->first_ib * A1FS_BLOCK_SIZE);
@@ -86,6 +88,8 @@ int main(int argc, char **argv)
             printf(" ");
         }
     }
+    printf("\n");
+
     printf("\n");
 
     // Print Inode
@@ -117,12 +121,13 @@ int main(int argc, char **argv)
                 for (int i = 0; i < inode->ext_count; i++)
                 {
                     cur_extent = (void *)first_extent + (i * sizeof(a1fs_extent));
+		    printf("Extend Number: %d, Start: %d, Count: %d\n", i, cur_extent->start, cur_extent->count);
                     a1fs_dentry *first_entry = (void *)disk + (cur_extent->start);
                     a1fs_dentry *cur_entry;
                     for (int j = 0; j < inode->dentry_count; j++)
                     {
                         cur_entry = (void *)first_entry + (j * sizeof(a1fs_dentry));
-                        printf("Inode number: %d, Name: %s", cur_entry->ino, cur_entry->name);
+                        printf("    Inode number: %d, Name: %s\n", cur_entry->ino, cur_entry->name);
                     }
                 }
             }
