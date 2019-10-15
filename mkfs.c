@@ -26,7 +26,7 @@
 
 #include "a1fs.h"
 #include "map.h"
-#include "readimage.c"
+#include "readimage.h"
 
 /** Command line options. */
 typedef struct mkfs_opts
@@ -180,13 +180,12 @@ int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
 	a1fs_extent *extend = (void *)image + (A1FS_BLOCK_SIZE * sb->first_data);
 	extend->start = sb->first_data + 1;
 	extend->count = 1;
-	
+
 	printf("Init Extent, Start: %d, Count: %d\n", extend->start, extend->count);
-    data_bitmap[0] = 1;
-    print_bitmap(data_bitmap, sb->dblock_count);
+	data_bitmap[0] = 1;
+	print_bitmap(data_bitmap, sb->dblock_count);
 
-
-    a1fs_dentry *entry1 = (void *)image + (A1FS_BLOCK_SIZE * extend->start);
+	a1fs_dentry *entry1 = (void *)image + (A1FS_BLOCK_SIZE * extend->start);
 	entry1->ino = 0;
 	strcpy(entry1->name, ".");
 
@@ -195,10 +194,9 @@ int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
 	strcpy(entry2->name, "..");
 
 	data_bitmap[1] = 1;
-    print_bitmap(data_bitmap, sb->dblock_count);
+	print_bitmap(data_bitmap, sb->dblock_count);
 
-
-    return 0;
+	return 0;
 }
 
 /**
