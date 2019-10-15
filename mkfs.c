@@ -30,13 +30,26 @@
 /** Print Bitmap */
 int print_bitmap(unsigned char *bitmap, int size)
 {
-	for (int bit = 0; bit < size; bit++)
+	int remain;
+	int size_left = size;
+	for (int byte = 0; (int)ceil(byte < size) / 8; byte++)
 	{
-		printf("%d", (bitmap[bit] & (1 << bit)) > 0);
-		if ((bit + 1) % 5 == 0)
+		size_left -= 8;
+		if (size_left >= 8)
 		{
-			printf(" ");
+			remain = 8
 		}
+		else
+		{
+			remain = size_left
+		}
+
+		for (int bit = 0; bit < reamin; bit++)
+		{
+			printf("%d", (bitmap[bit] & (1 << bit)) > 0);
+		}
+
+		printf(" ");
 	}
 	return 0;
 }
@@ -195,11 +208,11 @@ int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
 	extend->count = 1;
 
 	printf("Init Extent, Start: %d, Count: %d\n", extend->start, extend->count);
-    print_bitmap(data_bitmap, sb->dblock_count);
-    printf("\n");
-    data_bitmap[0] = data_bitmap[0] | 1;
 	print_bitmap(data_bitmap, sb->dblock_count);
-    printf("\n");
+	printf("\n");
+	data_bitmap[0] = data_bitmap[0] | 1;
+	print_bitmap(data_bitmap, sb->dblock_count);
+	printf("\n");
 
 	a1fs_dentry *entry1 = (void *)image + (A1FS_BLOCK_SIZE * extend->start);
 	entry1->ino = 0;
@@ -208,11 +221,11 @@ int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
 	a1fs_dentry *entry2 = (void *)entry1 + (sizeof(a1fs_dentry));
 	entry2->ino = 0;
 	strcpy(entry2->name, "..");
-	
-    data_bitmap[1] = data_bitmap[1] | 1;
-// data_bitmap[1] = 1;
+
+	data_bitmap[1] = data_bitmap[1] | 1;
+	// data_bitmap[1] = 1;
 	print_bitmap(data_bitmap, sb->dblock_count);
-    printf("\n");
+	printf("\n");
 
 	return 0;
 }
