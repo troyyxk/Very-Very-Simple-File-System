@@ -183,7 +183,7 @@ int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
 	
 	printf("Init Extent, Start: %d, Count: %d\n", extend->start, extend->count);
     data_bitmap[0] = 1;
-    a1fs_superblock *sb = (a1fs_superblock *)(disk);
+    a1fs_superblock *sb = (a1fs_superblock *)(image);
     print_bitmap(data_bitmap, sb->dblock_count);
 
 
