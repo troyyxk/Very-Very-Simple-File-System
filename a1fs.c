@@ -42,6 +42,62 @@
 // trailing '/'. For example, "~/my_csc369_repo/a1b/mnt/dir/" will be passed to
 // FUSE callbacks as "/dir".
 
+/** HELPER FUNCTIONS **/
+
+/**
+ * Return the number of entry names in a path
+ *
+ * Precondition: The path is correctly formatted
+ *
+ * @paran path   the path to be analyzed
+ * @return       the number of entry names in the path, not including '/' (root)
+ */
+ static int num_entry_name(const char *path) {
+     // No entry names are there if length <= 1
+     if (strlen(path) <= 1) return 0;
+
+     // For paths reaching here, there are at least 1 entry names in here;
+     // Each time a '/' is found, it is starting a new entry name provided
+     // that the path is formatted correctly
+     int count = 1;
+     for (int i = 1; i < strlen(path); i++) {
+         if (path[i] == '/') { count++; }
+     }
+
+     return count;
+ }
+
+/**
+ * Get a list of names of directory entries from a path, and fill them
+ * into the address in the parameter
+ *
+ * Precondition: The path is correctly formatted
+ *
+ * @param path    the path to be truncated
+ * @param dest    the destination to store the array of entry names
+ */
+ static void truncate_path(const char *path, char **dest) {
+
+     int name_index = 0; // Dest index tracker
+     int i = 1; // path index tracker
+     int j = 0; // Name index tracker
+
+     while (i < strlen(path)) {
+         if (path[i] != '/') {
+             // Reading chars of a name
+             dest[name_index][j] = path[i];
+             j++;
+         } else {
+             // End of a name; terminate current name and prepare for
+             // reading next name
+             dest[name_index][j] = '\0';
+             name_index++;
+             j = 0;
+         }
+         // Check the next index
+         i++;
+     }
+ }
 
 /**
  * Initialize the file system.
