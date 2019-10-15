@@ -11,6 +11,7 @@
 
 #include "a1fs.h"
 #include "map.h"
+#include "util.h"
 
 // Pointer to the 0th byte of the disk
 unsigned char *disk;
@@ -67,27 +68,29 @@ int main(int argc, char **argv)
     // Print Inode Bitmap
     printf("Inode bitmap: ");
     unsigned char *inode_bitmap = (unsigned char *)(disk + sb->first_ib * A1FS_BLOCK_SIZE);
-    for (int bit = 0; bit < sb->inode_count; bit++)
-    {
-        printf("%d", (inode_bitmap[bit] & (1 << bit)) > 0);
-        if ((bit + 1) % 5 == 0)
-        {
-            printf(" ");
-        }
-    }
+    // for (int bit = 0; bit < sb->inode_count; bit++)
+    // {
+    //     printf("%d", (inode_bitmap[bit] & (1 << bit)) > 0);
+    //     if ((bit + 1) % 5 == 0)
+    //     {
+    //         printf(" ");
+    //     }
+    // }
+    print_bitmap(inode_bitmap, sb->inode_count);
     printf("\n");
 
     // Print Block Bitmap
     printf("Block bitmap: ");
     unsigned char *block_bitmap = (unsigned char *)(disk + sb->first_db * A1FS_BLOCK_SIZE);
-    for (int bit = 0; bit < sb->dblock_count; bit++)
-    {
-        printf("%d", (block_bitmap[bit] & (1 << bit)) > 0);
-        if ((bit + 1) % 5 == 0)
-        {
-            printf(" ");
-        }
-    }
+    // for (int bit = 0; bit < sb->dblock_count; bit++)
+    // {
+    //     printf("%d", (block_bitmap[bit] & (1 << bit)) > 0);
+    //     if ((bit + 1) % 5 == 0)
+    //     {
+    //         printf(" ");
+    //     }
+    // }
+    print_bitmap(block_bitmap, sb->dblock_count);
     printf("\n");
 
     printf("\n");
@@ -121,7 +124,7 @@ int main(int argc, char **argv)
                 for (int i = 0; i < inode->ext_count; i++)
                 {
                     cur_extent = (void *)first_extent + (i * sizeof(a1fs_extent));
-		    printf("Extend Number: %d, Start: %d, Count: %d\n", i, cur_extent->start, cur_extent->count);
+                    printf("Extend Number: %d, Start: %d, Count: %d\n", i, cur_extent->start, cur_extent->count);
                     a1fs_dentry *first_entry = (void *)disk + (cur_extent->start);
                     a1fs_dentry *cur_entry;
                     for (int j = 0; j < inode->dentry_count; j++)
