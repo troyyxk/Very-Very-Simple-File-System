@@ -111,7 +111,7 @@ int main(int argc, char **argv)
             inode = (void *)inode_block + bit * sizeof(a1fs_inode);
             if (inode->mode & S_IFDIR)
             { // this is a directory
-                printf("Directory Extend Block Number: %d (for Inode Number %d)\n", inode->ext_block, bit);
+                printf("Directory Extend Block Number: %ld (for Inode Number %d)\n", inode->ext_block, bit);
                 a1fs_extent *first_extent = (void *)disk + (inode->ext_block * A1FS_BLOCK_SIZE);
                 a1fs_extent *cur_extent;
                 for (int i = 0; i < inode->ext_count; i++)

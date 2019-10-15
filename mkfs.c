@@ -176,7 +176,6 @@ int init_inode(a1fs_superblock *sb, void *image, unsigned char *inode_bitmap)
 /** The purpose of this function is solely for creating the Root Directory for the file system. */
 int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
 {
-	a1fs_inode *inode = (void *)image + (A1FS_BLOCK_SIZE * sb->first_inode);
 	a1fs_extent *extend = (void *)image + (A1FS_BLOCK_SIZE * sb->first_data);
 	extend->start = sb->first_data + 1;
 	extend->count = 1;
