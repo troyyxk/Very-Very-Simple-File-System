@@ -137,7 +137,7 @@ int main(int argc, char **argv)
                 {
                     cur_extent = (void *)first_extent + (i * sizeof(a1fs_extent));
                     printf("Extend Number: %d, Start: %d, Count: %d\n", i, cur_extent->start, cur_extent->count);
-                    a1fs_dentry *first_entry = (void *)disk + (cur_extent->start);
+                    a1fs_dentry *first_entry = (void *)disk + (A1FS_BLOCK_SIZE * cur_extent->start);
                     a1fs_dentry *cur_entry;
                     for (int j = 0; j < inode->dentry_count; j++)
                     {
