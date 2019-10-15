@@ -103,5 +103,26 @@ int main(int argc, char **argv)
     }
     printf("\n");
 
+    printf("Directory Block:\n");
+    for (int bit = 0; bit < sb->inode_count; bit++)
+    {
+        if ((inode_bitmap[bit] & (1 << bit)) > 0)
+        { // bit map is 1
+            inode = (void *)inode_block + bit * sizeof(a1fs_inode);
+            if (inode->mode & S_IFDIR)
+            { // this is a directory
+                printf("Directory Extend Block Number: %d (for Inode Number %d)\n", inode->ext_block, bit);
+                a1fs_extent *first_extent = (void *)disk + (inode->ext_block * A1FS_BLOCK_SIZE);
+                a1fs_extent *cur_extent;
+                for (int i = 0; i < inode->ext_count; i++)
+                {
+                    cur_extent = (void *)first_extent + (i * sizeof(a1fs_extent));
+                    printf("Inode number: %d, Name: %s", cur_extent->ino, cur_extent->name);
+                }
+            }
+            // bitmap count starts form 0
+        }
+    }
+
     return 0;
 }

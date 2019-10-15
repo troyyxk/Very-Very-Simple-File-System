@@ -162,10 +162,34 @@ int init_super(a1fs_superblock *sb, int n_inode, int n_sb, int n_ib, int n_db, i
 int init_inode(a1fs_superblock *sb, void *image, unsigned char *inode_bitmap)
 {
 	a1fs_inode *inode = (void *)image + (A1FS_BLOCK_SIZE * sb->first_inode);
+	inode->mode = S_IFDIR;
 	inode->links = 2;
-	inode->ext_block = sb->first_db;
+	inode->ext_block = sb->first_data;
+	inode->ext_count = 2;
 
 	inode_bitmap[0] = 1;
+
+	return 0;
+}
+
+/** The purpose of this function is solely for creating the Root Directory for the file system. */
+int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
+{
+	a1fs_inode *inode = (void *)image + (A1FS_BLOCK_SIZE * sb->first_inode);
+	a1fs_extent *extend = (void *)image + (A1FS_BLOCK_SIZE * sb->first_data);
+	extend->start = sb->first_data + 1;
+	extend->count = 1;
+
+	a1fs_dentry *entry1 = (void *)image + (A1FS_BLOCK_SIZE * (sb->first_data + 1));
+	entry1->ino = 0;
+	strcpy(entry1->name, ".");
+
+	a1fs_dentry *entry2 = (void *)entry1 + (sizeof(a1fs_dentry));
+	entry2->ino = 0;
+	strcpy(entry2->name, "..");
+
+	data_bitmap[0] = 1;
+	data_bitmap[1] = 1;
 
 	return 0;
 }
@@ -232,6 +256,12 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	if (init_inode(sb, image, inode_bitmap) != 0)
 	{
 		fprintf(stderr, "Failed to Init Inode\n");
+		return false;
+	}
+
+	if (init_root(sb, image, data_bitmap) != 0)
+	{
+		fprintf(stderr, "Failed to Init Root Directory\n");
 		return false;
 	}
 
