@@ -201,12 +201,25 @@ static int a1fs_statfs(const char *path, struct statvfs *st)
  *   ENOENT        a component of the path does not exist.
  *   ENOTDIR       a component of the path prefix is not a directory.
  *
+ * From Piazza:
+ * https://piazza.com/class/k001adza4dz2ja?cid=151
+ * You can just set values for the fields that you are using (mode, links, size, time)
+ * 
+ * 
+ *
  * @param path  path to a file or directory.
  * @param st    pointer to the struct stat that receives the result.
  * @return      0 on success; -errno on error;
  */
 static int a1fs_getattr(const char *path, struct stat *st)
 {
+	// unsigned short st_mode;
+	// short st_nlink;
+	// _off_t st_size;
+	// time_t st_atime;
+	// time_t st_mtime;
+	// time_t st_ctime;
+
 	if (strlen(path) >= A1FS_PATH_MAX)
 		return -ENAMETOOLONG;
 	fs_ctx *fs = get_fs();
