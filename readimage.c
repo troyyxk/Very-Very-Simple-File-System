@@ -16,7 +16,7 @@
 unsigned char *disk;
 
 /** Print Bitmap */
-int print_bitmap(unsigned char *bitmap, int size)
+int print_bitmap(unsigned char *bitmap)
 {
     for (int byte = 0; byte < 16; byte++)
     {
