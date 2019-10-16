@@ -30,27 +30,15 @@
 /** Print Bitmap */
 int print_bitmap(unsigned char *bitmap, int size)
 {
-	int remain;
-	int size_left = size;
-	for (int byte = 0; (int)ceil(byte < size) / 8; byte++)
+	for (int bit = 0; bit <= size; bit++)
 	{
-		size_left -= 8;
-		if (size_left >= 8)
+		printf("%d", (bitmap[bit] & (1 << bit)) > 0);
+		if ((bit + 1) % 8 == 0)
 		{
-			remain = 8
+			printf(" ");
 		}
-		else
-		{
-			remain = size_left
-		}
-
-		for (int bit = 0; bit < reamin; bit++)
-		{
-			printf("%d", (bitmap[bit] & (1 << bit)) > 0);
-		}
-
-		printf(" ");
 	}
+	printf("\n");
 	return 0;
 }
 
