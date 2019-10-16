@@ -207,7 +207,7 @@ int init_root(a1fs_superblock *sb, void *image, a1fs_blk_t *data_bitmap)
 	printf("Init Extent, Start: %d, Count: %d\n", extend->start, extend->count);
 	// print_bitmap(data_bitmap, sb->dblock_count);
 	// printf("\n");
-	setBitOn(data_bits, 0);
+	setBitOn(data_bitmap, 0);
 
 	// data_bitmap[0] = data_bitmap[0] | 1;
 	// print_bitmap(data_bitmap, sb->dblock_count);
@@ -221,7 +221,7 @@ int init_root(a1fs_superblock *sb, void *image, a1fs_blk_t *data_bitmap)
 	entry2->ino = 0;
 	strcpy(entry2->name, "..");
 
-	setBitOn(data_bits, 1);
+	setBitOn(data_bitmap, 1);
 	// data_bitmap[1] = data_bitmap[1] | 1;
 	// data_bitmap[1] = 1;
 	// print_bitmap(data_bitmap, sb->dblock_count);
