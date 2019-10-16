@@ -18,16 +18,18 @@ unsigned char *disk;
 /** Print Bitmap */
 int print_bitmap(unsigned char *bitmap, int size)
 {
-    for (int bit = 0; bit < size; bit++)
+    for (int byte = 0; byte < 16; byte++)
     {
-        printf("%d", (bitmap[bit] & (1 << bit)) > 0);
-        if ((bit + 1) % 8 == 0)
+        // Print the bits within the current byte
+        for (int bit = 0; bit < 8; bit++)
         {
-            printf(" ");
+            printf("%d", (bitmap[byte] & (1 << bit)) > 0);
         }
+        // Print the space to separate bytes
+        printf(" ");
     }
+    // Line break
     printf("\n");
-    return 0;
 }
 
 int main(int argc, char **argv)
