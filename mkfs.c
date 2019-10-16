@@ -42,6 +42,13 @@ int print_bitmap(unsigned char *bitmap, int size)
 	return 0;
 }
 
+// Set the i-th index of the bitmap to 1
+void setBitOn(uint32_t *A, uint32_t i)
+{
+	int int_bits = sizeof(uint32_t) * 8;
+	A[i / int_bits] |= 1 << (i % int_bits);
+}
+
 /** Command line options. */
 typedef struct mkfs_opts
 {
@@ -174,7 +181,7 @@ int init_super(a1fs_superblock *sb, int n_inode, int n_sb, int n_ib, int n_db, i
 }
 
 /** The purpose of this function is solely for creating the initial inode for the file system. */
-int init_inode(a1fs_superblock *sb, void *image, unsigned char *inode_bitmap)
+int init_inode(a1fs_superblock *sb, void *image, a1fs_blk_t *inode_bitmap)
 {
 	a1fs_inode *inode = (void *)image + (A1FS_BLOCK_SIZE * sb->first_inode);
 	inode->mode = S_IFDIR;
@@ -183,24 +190,28 @@ int init_inode(a1fs_superblock *sb, void *image, unsigned char *inode_bitmap)
 	inode->ext_count = 1;
 	inode->dentry_count = 2;
 
-	inode_bitmap[0] = 1;
+	setBitOn(inode_bitmap, 0);
+
+	// inode_bitmap[0] = 1;
 
 	return 0;
 }
 
 /** The purpose of this function is solely for creating the Root Directory for the file system. */
-int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
+int init_root(a1fs_superblock *sb, void *image, a1fs_blk_t *data_bitmap)
 {
 	a1fs_extent *extend = (void *)image + (A1FS_BLOCK_SIZE * sb->first_data);
 	extend->start = sb->first_data + 1;
 	extend->count = 1;
 
 	printf("Init Extent, Start: %d, Count: %d\n", extend->start, extend->count);
-	print_bitmap(data_bitmap, sb->dblock_count);
-	printf("\n");
-	data_bitmap[0] = data_bitmap[0] | 1;
-	print_bitmap(data_bitmap, sb->dblock_count);
-	printf("\n");
+	// print_bitmap(data_bitmap, sb->dblock_count);
+	// printf("\n");
+	setBitOn(data_bits, 0);
+
+	// data_bitmap[0] = data_bitmap[0] | 1;
+	// print_bitmap(data_bitmap, sb->dblock_count);
+	// printf("\n");
 
 	a1fs_dentry *entry1 = (void *)image + (A1FS_BLOCK_SIZE * extend->start);
 	entry1->ino = 0;
@@ -210,10 +221,11 @@ int init_root(a1fs_superblock *sb, void *image, unsigned char *data_bitmap)
 	entry2->ino = 0;
 	strcpy(entry2->name, "..");
 
-	data_bitmap[1] = data_bitmap[1] | 1;
+	setBitOn(data_bits, 1);
+	// data_bitmap[1] = data_bitmap[1] | 1;
 	// data_bitmap[1] = 1;
-	print_bitmap(data_bitmap, sb->dblock_count);
-	printf("\n");
+	// print_bitmap(data_bitmap, sb->dblock_count);
+	// printf("\n");
 
 	return 0;
 }
@@ -264,14 +276,14 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	}
 
 	// Init Inode Bitmap
-	unsigned char *inode_bitmap = (unsigned char *)(image + sb->first_ib * A1FS_BLOCK_SIZE);
+	a1fs_blk_t *inode_bitmap = (a1fs_blk_t *)(image + sb->first_ib * A1FS_BLOCK_SIZE);
 	for (int i = 0; i < sb->inode_count; i++)
 	{
 		inode_bitmap[i] = 0;
 	}
 
 	// Init Data Bitmap
-	unsigned char *data_bitmap = (unsigned char *)(image + sb->first_db * A1FS_BLOCK_SIZE);
+	a1fs_blk_t *data_bitmap = (a1fs_blk_t *)(image + sb->first_db * A1FS_BLOCK_SIZE);
 	for (int i = 0; i < sb->db_count; i++)
 	{
 		data_bitmap[i] = 0;
