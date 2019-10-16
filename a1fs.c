@@ -52,20 +52,26 @@
  * @paran path   the path to be analyzed
  * @return       the number of entry names in the path, not including '/' (root)
  */
- static int num_entry_name(const char *path) {
-     // No entry names are there if length <= 1
-     if (strlen(path) <= 1) return 0;
+static int num_entry_name(const char *path)
+{
+	// No entry names are there if length <= 1
+	if (strlen(path) <= 1)
+		return 0;
 
-     // For paths reaching here, there are at least 1 entry names in here;
-     // Each time a '/' is found, it is starting a new entry name provided
-     // that the path is formatted correctly
-     int count = 1;
-     for (int i = 1; i < strlen(path); i++) {
-         if (path[i] == '/') { count++; }
-     }
+	// For paths reaching here, there are at least 1 entry names in here;
+	// Each time a '/' is found, it is starting a new entry name provided
+	// that the path is formatted correctly
+	int count = 1;
+	for (int i = 1; i < strlen(path); i++)
+	{
+		if (path[i] == '/')
+		{
+			count++;
+		}
+	}
 
-     return count;
- }
+	return count;
+}
 
 /**
  * Get a list of names of directory entries from a path, and fill them
@@ -76,28 +82,33 @@
  * @param path    the path to be truncated
  * @param dest    the destination to store the array of entry names
  */
- static void truncate_path(const char *path, char **dest) {
+static void truncate_path(const char *path, char **dest)
+{
 
-     int name_index = 0; // Dest index tracker
-     int i = 1; // path index tracker
-     int j = 0; // Name index tracker
+	int name_index = 0; // Dest index tracker
+	int i = 1;			// path index tracker
+	int j = 0;			// Name index tracker
 
-     while (i < strlen(path)) {
-         if (path[i] != '/') {
-             // Reading chars of a name
-             dest[name_index][j] = path[i];
-             j++;
-         } else {
-             // End of a name; terminate current name and prepare for
-             // reading next name
-             dest[name_index][j] = '\0';
-             name_index++;
-             j = 0;
-         }
-         // Check the next index
-         i++;
-     }
- }
+	while (i < strlen(path))
+	{
+		if (path[i] != '/')
+		{
+			// Reading chars of a name
+			dest[name_index][j] = path[i];
+			j++;
+		}
+		else
+		{
+			// End of a name; terminate current name and prepare for
+			// reading next name
+			dest[name_index][j] = '\0';
+			name_index++;
+			j = 0;
+		}
+		// Check the next index
+		i++;
+	}
+}
 
 /**
  * Initialize the file system.
@@ -113,11 +124,13 @@
 static bool a1fs_init(fs_ctx *fs, a1fs_opts *opts)
 {
 	// Nothing to initialize if only printing help or version
-	if (opts->help || opts->version) return true;
+	if (opts->help || opts->version)
+		return true;
 
 	size_t size;
 	void *image = map_file(opts->img_path, A1FS_BLOCK_SIZE, &size);
-	if (!image) return false;
+	if (!image)
+		return false;
 
 	return fs_ctx_init(fs, image, size, opts);
 }
@@ -130,9 +143,11 @@ static bool a1fs_init(fs_ctx *fs, a1fs_opts *opts)
  */
 static void a1fs_destroy(void *ctx)
 {
-	fs_ctx *fs = (fs_ctx*)ctx;
-	if (fs->image) {
-		if (fs->opts->sync && (msync(fs->image, fs->size, MS_SYNC) < 0)) {
+	fs_ctx *fs = (fs_ctx *)ctx;
+	if (fs->image)
+	{
+		if (fs->opts->sync && (msync(fs->image, fs->size, MS_SYNC) < 0))
+		{
 			perror("msync");
 		}
 		munmap(fs->image, fs->size);
@@ -143,9 +158,8 @@ static void a1fs_destroy(void *ctx)
 /** Get file system context. */
 static fs_ctx *get_fs(void)
 {
-	return (fs_ctx*)fuse_get_context()->private_data;
+	return (fs_ctx *)fuse_get_context()->private_data;
 }
-
 
 /**
  * Get file system statistics.
@@ -161,12 +175,12 @@ static fs_ctx *get_fs(void)
  */
 static int a1fs_statfs(const char *path, struct statvfs *st)
 {
-	(void)path;// unused
+	(void)path; // unused
 	fs_ctx *fs = get_fs();
 
 	memset(st, 0, sizeof(*st));
-	st->f_bsize   = A1FS_BLOCK_SIZE;
-	st->f_frsize  = A1FS_BLOCK_SIZE;
+	st->f_bsize = A1FS_BLOCK_SIZE;
+	st->f_frsize = A1FS_BLOCK_SIZE;
 	//TODO
 	(void)fs;
 	st->f_namemax = A1FS_NAME_MAX;
@@ -193,14 +207,16 @@ static int a1fs_statfs(const char *path, struct statvfs *st)
  */
 static int a1fs_getattr(const char *path, struct stat *st)
 {
-	if (strlen(path) >= A1FS_PATH_MAX) return -ENAMETOOLONG;
+	if (strlen(path) >= A1FS_PATH_MAX)
+		return -ENAMETOOLONG;
 	fs_ctx *fs = get_fs();
 
 	memset(st, 0, sizeof(*st));
 
 	//NOTE: This is just a placeholder that allows the file system to be mounted
 	// without errors. You should remove this from your implementation.
-	if (strcmp(path, "/") == 0) {
+	if (strcmp(path, "/") == 0)
+	{
 		st->st_mode = S_IFDIR | 0777;
 		return 0;
 	}
@@ -231,16 +247,17 @@ static int a1fs_getattr(const char *path, struct stat *st)
  * @return        0 on success; -errno on error.
  */
 static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                        off_t offset, struct fuse_file_info *fi)
+						off_t offset, struct fuse_file_info *fi)
 {
-	(void)offset;// unused
-	(void)fi;// unused
+	(void)offset; // unused
+	(void)fi;	 // unused
 	fs_ctx *fs = get_fs();
 
 	//NOTE: This is just a placeholder that allows the file system to be mounted
 	// without errors. You should remove this from your implementation.
-	if (strcmp(path, "/") == 0) {
-		filler(buf, "." , NULL, 0);
+	if (strcmp(path, "/") == 0)
+	{
+		filler(buf, ".", NULL, 0);
 		filler(buf, "..", NULL, 0);
 		return 0;
 	}
@@ -249,7 +266,6 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	(void)fs;
 	return -ENOSYS;
 }
-
 
 /**
  * Create a directory.
@@ -329,7 +345,7 @@ static int a1fs_rmdir(const char *path)
  */
 static int a1fs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
 {
-	(void)fi;// unused
+	(void)fi; // unused
 	assert(S_ISREG(mode));
 	fs_ctx *fs = get_fs();
 
@@ -389,7 +405,6 @@ static int a1fs_rename(const char *from, const char *to)
 	return -ENOSYS;
 }
 
-
 /**
  * Change the access and modification times of a file or directory.
  *
@@ -444,7 +459,6 @@ static int a1fs_truncate(const char *path, off_t size)
 	return -ENOSYS;
 }
 
-
 /**
  * Read data from a file.
  *
@@ -465,9 +479,9 @@ static int a1fs_truncate(const char *path, off_t size)
  *                -errno on error.
  */
 static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
-                     struct fuse_file_info *fi)
+					 struct fuse_file_info *fi)
 {
-	(void)fi;// unused
+	(void)fi; // unused
 	fs_ctx *fs = get_fs();
 
 	//TODO
@@ -498,9 +512,9 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
  * @return        number of bytes written on success; -errno on error.
  */
 static int a1fs_write(const char *path, const char *buf, size_t size,
-                      off_t offset, struct fuse_file_info *fi)
+					  off_t offset, struct fuse_file_info *fi)
 {
-	(void)fi;// unused
+	(void)fi; // unused
 	fs_ctx *fs = get_fs();
 
 	//TODO
@@ -512,31 +526,32 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
 	return -ENOSYS;
 }
 
-
 static struct fuse_operations a1fs_ops = {
-	.destroy  = a1fs_destroy,
-	.statfs   = a1fs_statfs,
-	.getattr  = a1fs_getattr,
-	.readdir  = a1fs_readdir,
-	.mkdir    = a1fs_mkdir,
-	.rmdir    = a1fs_rmdir,
-	.create   = a1fs_create,
-	.unlink   = a1fs_unlink,
-	.rename   = a1fs_rename,
-	.utimens  = a1fs_utimens,
+	.destroy = a1fs_destroy,
+	.statfs = a1fs_statfs,
+	.getattr = a1fs_getattr,
+	.readdir = a1fs_readdir,
+	.mkdir = a1fs_mkdir,
+	.rmdir = a1fs_rmdir,
+	.create = a1fs_create,
+	.unlink = a1fs_unlink,
+	.rename = a1fs_rename,
+	.utimens = a1fs_utimens,
 	.truncate = a1fs_truncate,
-	.read     = a1fs_read,
-	.write    = a1fs_write,
+	.read = a1fs_read,
+	.write = a1fs_write,
 };
 
 int main(int argc, char *argv[])
 {
-	a1fs_opts opts = {0};// defaults are all 0
+	a1fs_opts opts = {0}; // defaults are all 0
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-	if (!a1fs_opt_parse(&args, &opts)) return 1;
+	if (!a1fs_opt_parse(&args, &opts))
+		return 1;
 
 	fs_ctx fs = {0};
-	if (!a1fs_init(&fs, &opts)) {
+	if (!a1fs_init(&fs, &opts))
+	{
 		fprintf(stderr, "Failed to mount the file system\n");
 		return 1;
 	}
