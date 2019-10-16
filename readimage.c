@@ -30,6 +30,7 @@ int print_bitmap(unsigned char *bitmap)
     }
     // Line break
     printf("\n");
+	return 0;
 }
 
 int main(int argc, char **argv)
@@ -92,7 +93,7 @@ int main(int argc, char **argv)
     //         printf(" ");
     //     }
     // }
-    print_bitmap(inode_bitmap, sb->inode_count);
+    print_bitmap(inode_bitmap);
     printf("\n");
 
     // Print Block Bitmap
@@ -106,7 +107,7 @@ int main(int argc, char **argv)
     //         printf(" ");
     //     }
     // }
-    print_bitmap(block_bitmap, sb->dblock_count);
+    print_bitmap(block_bitmap);
     printf("\n");
 
     printf("\n");

@@ -42,6 +42,7 @@ int print_bitmap(unsigned char *bitmap)
 	}
 	// Line break
 	printf("\n");
+	return 0;
 }
 
 // Set the i-th index of the bitmap to 1
@@ -206,14 +207,8 @@ int init_root(a1fs_superblock *sb, void *image, a1fs_blk_t *data_bitmap)
 	extend->start = sb->first_data + 1;
 	extend->count = 1;
 
-	printf("Init Extent, Start: %d, Count: %d\n", extend->start, extend->count);
-	// print_bitmap(data_bitmap, sb->dblock_count);
-	// printf("\n");
+	// printf("Init Extent, Start: %d, Count: %d\n", extend->start, extend->count);
 	setBitOn(data_bitmap, 0);
-
-	// data_bitmap[0] = data_bitmap[0] | 1;
-	// print_bitmap(data_bitmap, sb->dblock_count);
-	// printf("\n");
 
 	a1fs_dentry *entry1 = (void *)image + (A1FS_BLOCK_SIZE * extend->start);
 	entry1->ino = 0;
@@ -224,10 +219,6 @@ int init_root(a1fs_superblock *sb, void *image, a1fs_blk_t *data_bitmap)
 	strcpy(entry2->name, "..");
 
 	setBitOn(data_bitmap, 1);
-	// data_bitmap[1] = data_bitmap[1] | 1;
-	// data_bitmap[1] = 1;
-	// print_bitmap(data_bitmap, sb->dblock_count);
-	// printf("\n");
 
 	return 0;
 }
