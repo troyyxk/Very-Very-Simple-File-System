@@ -22,7 +22,7 @@ a1fs: a1fs.o fs_ctx.o map.o options.o
 	$(CC) $^ -o $@ $(LDFLAGS)
 
 mkfs.a1fs: map.o mkfs.o
-	$(CC) $^ -o $@ $(LDFLAGS) -lm
+	$(CC) $^ -o $@ $(LDFLAGS)
 
 readimage: readimage.o
 	$(CC) $^ -o $@ $(LDFLAGS)

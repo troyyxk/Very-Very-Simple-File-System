@@ -7,7 +7,6 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <math.h>
 
 #include "a1fs.h"
 #include "map.h"
@@ -30,7 +29,7 @@ int print_bitmap(unsigned char *bitmap)
     }
     // Line break
     printf("\n");
-	return 0;
+    return 0;
 }
 
 int main(int argc, char **argv)

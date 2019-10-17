@@ -22,10 +22,23 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
-#include <math.h>
 
 #include "a1fs.h"
 #include "map.h"
+
+/** Own Version of ceil */
+int ceil_division(int a, int b)
+{
+	int cur_result = a / b;
+	if (a % b == 0)
+	{
+		return cur_result;
+	}
+	else
+	{
+		return cur_result + 1;
+	}
+}
 
 /** Print Bitmap */
 int print_bitmap(unsigned char *bitmap)
@@ -219,6 +232,7 @@ int init_root(a1fs_superblock *sb, void *image, a1fs_blk_t *data_bitmap)
 	strcpy(entry2->name, "..");
 
 	setBitOn(data_bitmap, 1);
+	// NOT SURE
 
 	return 0;
 }
@@ -246,11 +260,17 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	int n_block = (double)size / (double)A1FS_BLOCK_SIZE;
 	int n_sb = 1;
 	int n_inode = opts->n_inodes;
-	int n_ib = ceil((double)n_inode / ((double)A1FS_BLOCK_SIZE * 8));
-	int n_db = ceil((double)n_block / ((double)A1FS_BLOCK_SIZE * 8)); // 需要改一下
+	int n_ib = ceil_division(n_inode, A1FS_BLOCK_SIZE * 8);
+	int n_db = ceil_division(n_block, A1FS_BLOCK_SIZE * 8);
 
 	// in byte
-	int n_iblock = ceil((double)n_inode * inode_size / (double)A1FS_BLOCK_SIZE);
+	int n_iblock = ceil_division(n_inode * inode_size, A1FS_BLOCK_SIZE);
+
+	// int n_ib =  ceil((double)n_inode / ((double)A1FS_BLOCK_SIZE * 8));
+	// int n_db = ceil((double)n_block / ((double)A1FS_BLOCK_SIZE * 8));
+
+	// // in byte
+	// int n_iblock = ceil((double)n_inode * inode_size / (double)A1FS_BLOCK_SIZE);
 	// nubmer of data block is the total number of:
 	// super block
 	// inode bitmap block
