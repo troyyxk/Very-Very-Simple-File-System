@@ -12,6 +12,28 @@
 #include "a1fs.h"
 #include "map.h"
 
+/** HELPER FUNCTION **/
+
+int timespec2str(char *buf, uint len, struct timespec *ts) {
+    int ret;
+    struct tm t;
+
+    tzset();
+    if (localtime_r(&(ts->tv_sec), &t) == NULL)
+        return 1;
+
+    ret = strftime(buf, len, "%F %T", &t);
+    if (ret == 0)
+        return 2;
+    len -= ret - 1;
+
+    ret = snprintf(&buf[strlen(buf)], len, ".%09ld", ts->tv_nsec);
+    if (ret >= len)
+        return 3;
+
+    return 0;
+}
+
 // Pointer to the 0th byte of the disk
 unsigned char *disk;
 
@@ -147,7 +169,11 @@ int main(int argc, char **argv)
                     for (int j = 0; j < inode->dentry_count; j++)
                     {
                         cur_entry = (void *)first_entry + (j * sizeof(a1fs_dentry));
-                        printf("    Inode number: %d, Name: %s\n", cur_entry->ino, cur_entry->name);
+                        printf("    Inode number: %d, Name: %s, ", cur_entry->ino, cur_entry->name);
+			// Print mtime for the file
+			a1fs_inode *entry_inode = (void *)inode_block + cur_entry->ino * sizeof(a1fs_inode);
+			struct timespec mtime = entry_inode->mtime;
+			printf("Mutation time: %lld.%.9ld\n", (long long) mtime.tv_sec, mtime.tv_nsec);
                     }
                 }
             }
