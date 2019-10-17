@@ -245,12 +245,10 @@ static int a1fs_getattr(const char *path, struct stat *st)
 	int fix_count = num_entry_name(path);
 	int cur_fix_index = 1;
 
-
-
 	// loop through direcotries
 	void *image = fs->image;
-	a1fs_superblock *sb = (void *) image;
-	a1fs_inode *first_inode = (void *)image + sb->first_inode*A1FS_BLOCK_SIZE;
+	a1fs_superblock *sb = (void *)image;
+	a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
 	// a1fs_inode *pioneer = first_inode;
 	a1fs_inode *cur = first_inode;
 
@@ -262,33 +260,37 @@ static int a1fs_getattr(const char *path, struct stat *st)
 	// if (curfix == null){  // no other prefix, the root directory
 	// 	pioneer = null;
 	// } else{
-	// 	visioner = 
+	// 	visioner =
 	// }
-	while(curfix != NULL){
+	while (curfix != NULL)
+	{
 		// cur = pioneer;
 
 		// not a directory and not the last one.
-		if((!(cur->mode & S_ISDIR))&& fix_count != cur_fix_index){
+		if ((!(cur->mode & S_ISDIR)) && fix_count != cur_fix_index)
+		{
 			return -ENOTDIR;
 		}
 		cur_fix_index++;
 		int flag = 1;
-		dentry = (void *)image + cur->ext_block*A1FS_BLOCK_SIZE;
-		for (int i = 0; i < cur->dentry_count; cur++){
-			dentry = (void *)dentry + i*sizeof(a1fs_dentry);
-			if(strcmp(dentry->name, curfix) == 0){  // directory/file is found
-				cur = (void *)first_inode + dentry->ino*sizeof(a1fs_inode);
+		dentry = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+		for (int i = 0; i < cur->dentry_count; cur++)
+		{
+			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
+			if (strcmp(dentry->name, curfix) == 0)
+			{ // directory/file is found
+				cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);
 				flag = 0;
 				break;
 			}
 		}
 
-		if (flag){  // does not exist
+		if (flag)
+		{ // does not exist
 			return -ENOENT;
 		}
 
 		curfix = strtok(NULL, delim);
-
 	}
 
 	st->st_mode = cur->mode;
@@ -296,8 +298,7 @@ static int a1fs_getattr(const char *path, struct stat *st)
 	// st->st_size = cur->size;
 	st->st_mtime = cur->mtime.tv_sec;
 
-
-	return -ENOSYS;
+	return 0;
 }
 
 /**
