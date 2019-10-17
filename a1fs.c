@@ -52,7 +52,7 @@
  * @paran path   the path to be analyzed
  * @return       the number of entry names in the path, not including '/' (root)
  */
-static int num_entry_name(const char *path)
+int num_entry_name(const char *path)
 {
 	// No entry names are there if length <= 1
 	if (strlen(path) <= 1)
@@ -62,7 +62,7 @@ static int num_entry_name(const char *path)
 	// Each time a '/' is found, it is starting a new entry name provided
 	// that the path is formatted correctly
 	int count = 1;
-	for (int i = 1; i < strlen(path); i++)
+	for (int i = 1; i < (int)strlen(path); i++)
 	{
 		if (path[i] == '/')
 		{
@@ -82,33 +82,33 @@ static int num_entry_name(const char *path)
  * @param path    the path to be truncated
  * @param dest    the destination to store the array of entry names
  */
-static void truncate_path(const char *path, char **dest)
-{
+// static void truncate_path(const char *path, char **dest)
+// {
 
-	int name_index = 0; // Dest index tracker
-	int i = 1;			// path index tracker
-	int j = 0;			// Name index tracker
+// 	int name_index = 0; // Dest index tracker
+// 	int i = 1;			// path index tracker
+// 	int j = 0;			// Name index tracker
 
-	while (i < strlen(path))
-	{
-		if (path[i] != '/')
-		{
-			// Reading chars of a name
-			dest[name_index][j] = path[i];
-			j++;
-		}
-		else
-		{
-			// End of a name; terminate current name and prepare for
-			// reading next name
-			dest[name_index][j] = '\0';
-			name_index++;
-			j = 0;
-		}
-		// Check the next index
-		i++;
-	}
-}
+// 	while (i < strlen(path))
+// 	{
+// 		if (path[i] != '/')
+// 		{
+// 			// Reading chars of a name
+// 			dest[name_index][j] = path[i];
+// 			j++;
+// 		}
+// 		else
+// 		{
+// 			// End of a name; terminate current name and prepare for
+// 			// reading next name
+// 			dest[name_index][j] = '\0';
+// 			name_index++;
+// 			j = 0;
+// 		}
+// 		// Check the next index
+// 		i++;
+// 	}
+// }
 
 /**
  * Initialize the file system.
@@ -216,9 +216,9 @@ static int a1fs_getattr(const char *path, struct stat *st)
 	// unsigned short st_mode;
 	// short st_nlink;
 	// _off_t st_size;
-	// time_t st_atime;
+	// // time_t st_atime;
 	// time_t st_mtime;
-	// time_t st_ctime;
+	// // time_t st_ctime;
 
 	if (strlen(path) >= A1FS_PATH_MAX)
 		return -ENAMETOOLONG;
@@ -226,16 +226,77 @@ static int a1fs_getattr(const char *path, struct stat *st)
 
 	memset(st, 0, sizeof(*st));
 
-	//NOTE: This is just a placeholder that allows the file system to be mounted
-	// without errors. You should remove this from your implementation.
-	if (strcmp(path, "/") == 0)
-	{
-		st->st_mode = S_IFDIR | 0777;
-		return 0;
-	}
+	// //NOTE: This is just a placeholder that allows the file system to be mounted
+	// // without errors. You should remove this from your implementation.
+	// if (strcmp(path, "/") == 0)
+	// {
+	// 	st->st_mode = S_IFDIR | 0777;
+	// 	return 0;
+	// }
 
 	//TODO
 	(void)fs;
+	char *cpy_path;
+	strcpy(cpy_path, path);
+	char *delim = "/";
+	char *curfix = strtok(cpy_path, delim);
+
+	// clarify the confussion of treating the last one as none directory and return error
+	int fix_count = num_entry_name(path);
+	int cur_fix_index = 1;
+
+
+
+	// loop through direcotries
+	void *image = fs->image;
+	a1fs_superblock *sb = (void *) image;
+	a1fs_inode *first_inode = (void *)image + sb->first_inode*A1FS_BLOCK_SIZE;
+	// a1fs_inode *pioneer = first_inode;
+	a1fs_inode *cur = first_inode;
+
+	a1fs_dentry *dentry;
+
+	// // more pioneer than pioneer
+	// a1fs_inode *visioner;
+
+	// if (curfix == null){  // no other prefix, the root directory
+	// 	pioneer = null;
+	// } else{
+	// 	visioner = 
+	// }
+	while(curfix != NULL){
+		// cur = pioneer;
+
+		// not a directory and not the last one.
+		if((!(cur->mode & S_ISDIR))&& fix_count != cur_fix_index){
+			return -ENOTDIR;
+		}
+		cur_fix_index++;
+		int flag = 1;
+		dentry = (void *)image + cur->ext_block*A1FS_BLOCK_SIZE;
+		for (int i = 0; i < cur->dentry_count; cur++){
+			dentry = (void *)dentry + i*sizeof(a1fs_dentry);
+			if(strcmp(dentry->name, curfix) == 0){  // directory/file is found
+				cur = (void *)first_inode + dentry->ino*sizeof(a1fs_inode);
+				flag = 0;
+				break;
+			}
+		}
+
+		if (flag){  // does not exist
+			return -ENOENT;
+		}
+
+		curfix = strtok(NULL, delim);
+
+	}
+
+	st->st_mode = cur->mode;
+	st->st_nlink = cur->links;
+	// st->st_size = cur->size;
+	st->st_mtime = cur->mtime.tv_sec;
+
+
 	return -ENOSYS;
 }
 
