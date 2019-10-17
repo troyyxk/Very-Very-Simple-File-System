@@ -232,6 +232,7 @@ int init_root(a1fs_superblock *sb, void *image, a1fs_blk_t *data_bitmap)
 	strcpy(entry2->name, "..");
 
 	setBitOn(data_bitmap, 1);
+	// NOT SURE
 
 	return 0;
 }
