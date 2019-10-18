@@ -98,9 +98,9 @@ int checkBit(uint32_t *bitmap, uint32_t i)
 }
 
 /** Find a free inode from the inode bitmap. */
-int find_free_from_bitmap(unsigned char *bitmap, int size){
-	for (int i = 0; i = size; i++){
-		if(checkBit(bitmap, i) == 0){
+int find_free_from_bitmap(a1fs_blk_t *bitmap, int size){
+	for (int i = 0; i < size; i++){
+		if(checkBit((uint32_t *)bitmap, i) == 0){
 			return i;
 		}
 	}
@@ -476,13 +476,13 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	}
 
 	if (curfix == NULL){
-		fprintf(stderr, "curfis == null in mkdir, something wrong in the loop.\n")
+		fprintf(stderr, "curfis == null in mkdir, something wrong in the loop.\n");
 		return 1;
 	}
 
 	/** At this point, cur is the inode of the parent directory and curfix is the name of the new directory to be added. */
 	// Find position in bitmap and modify the bitmap.
-	unsigned char *inode_bitmap = (void)image + sb->first_ib*A1FS_BLOCK_SIZE;
+	a1fs_blk_t *inode_bitmap = (void *)image + sb->first_ib*A1FS_BLOCK_SIZE;
 	int new_inode_addr = find_free_from_bitmap(inode_bitmap, sb->inode_count);
 	if (new_inode_addr < 0){
 		fprintf(stderr, "All inode full (all inode bitmap 1)\n");
@@ -490,7 +490,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	}
 	setBitOn(inode_bitmap, new_inode_addr);
 
-	unsigned char *data_bitmap = (void)image + sb->first_db*A1FS_BLOCK_SIZE;
+	a1fs_blk_t *data_bitmap = (void *)image + sb->first_db*A1FS_BLOCK_SIZE;
 	int new_ext_addr = find_free_from_bitmap(data_bitmap, sb->dblock_count);
 	if (new_ext_addr < 0){
 		fprintf(stderr, "All data full (all data bitmap 1)\n");
@@ -510,8 +510,8 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	a1fs_inode *new_inode = (void *)image + new_inode_addr*A1FS_BLOCK_SIZE;
 	new_inode->links=2;
 	new_inode->mode=S_IFDIR;
-	new_inode->mtime=NULL;
-	new_inode->size=NULL;
+	// new_inode->mtime=NULL;
+	// new_inode->size=NULL;
 	new_inode->dentry_count=2;
 	new_inode->ext_block=new_ext_addr;
 	new_inode->ext_count=1;
@@ -524,11 +524,11 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	// Add data block.
 	a1fs_dentry *self_entry = (void *)image + new_data_attr*A1FS_BLOCK_SIZE;
 	self_entry->ino = new_inode_addr;
-	self_entry->name = ".";
+	strcpy(self_entry->name, ".");
 
 	a1fs_dentry *parent_entry = (void *)self_entry + 1*sizeof(a1fs_dentry);
 	parent_entry->ino = cur_inode;
-	parent_entry->name = "..";
+	strcpy(parent_entry->name, "..");
 
 	return 0;
 }
