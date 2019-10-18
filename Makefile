@@ -27,6 +27,9 @@ mkfs.a1fs: map.o mkfs.o
 readimage: readimage.o
 	$(CC) $^ -o $@ $(LDFLAGS)
 
+getattr_test: getattr_test.o
+	$(CC) $^ -o $@ $(LDFLAGS)
+
 SRC_FILES = $(wildcard *.c)
 OBJ_FILES = $(SRC_FILES:.c=.o)
 

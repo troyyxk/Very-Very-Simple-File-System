@@ -314,7 +314,7 @@ static int a1fs_getattr(const char *path, struct stat *st)
 		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
 
 		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
-		for (int i = 0; i < cur->dentry_count; cur++)
+		for (int i = 0; i < cur->dentry_count; i++)
 		{
 			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
 			if (strcmp(dentry->name, curfix) == 0)
