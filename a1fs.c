@@ -73,6 +73,42 @@ int num_entry_name(const char *path)
 	return count;
 }
 
+// Set the i-th index of the bitmap to 1
+void setBitOn(uint32_t *A, uint32_t i)
+{
+	// int int_bits = sizeof(uint32_t) * 8;
+	A[i / 32] |= 1 << (i % 32);
+}
+
+// Set the i-th index of the bitmap to 0
+void setBitOff(uint32_t *A, uint32_t i)
+{
+	// int int_bits = sizeof(uint32_t) * 8;
+	A[i / 32] &= ~(1 << (i % 32));
+}
+
+
+/** Check in the bitmap if the bit is 0 (free) */
+int checkBit(uint32_t *bitmap, uint32_t i)
+{
+	if((bitmap[i / 32] & 1 << (i % 32)) != 0){
+		return 1;
+	}
+	return 0;
+}
+
+/** Find a free inode from the inode bitmap. */
+int find_free_from_bitmap(unsigned char *bitmap, int size){
+	for (int i = 0; i = size; i++){
+		if(checkBit(bitmap, i) == 0){
+			return i;
+		}
+	}
+
+	// All inode full.
+	return -1;
+}
+
 /**
  * Get a list of names of directory entries from a path, and fill them
  * into the address in the parameter
@@ -394,7 +430,10 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
 	a1fs_inode *cur = first_inode;
 
+	a1fs_extent *extent;
 	a1fs_dentry *dentry;
+
+	int cur_inode;
 
 	while (curfix != NULL)
 	{
@@ -403,8 +442,9 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 		// not a directory and not the last one.
 		if (fix_count == cur_fix_index)
 		{
+			cur_inode = dentry->ino;
 			break;
-			/** At this point, cur is the inode of the parent directory and name is the name of the new directory to be added. */
+			/** At this point, cur is the inode of the parent directory and curfix is the name of the new directory to be added. */
 		}
 		cur_fix_index++;
 
@@ -414,7 +454,8 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 		}
 		// indicator for whether the directory is found, 1 for ont found and 0 for found
 		int flag = 1;
-		dentry = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
 		for (int i = 0; i < cur->dentry_count; cur++)
 		{
 			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
@@ -433,6 +474,61 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 
 		curfix = strtok(NULL, delim);
 	}
+
+	if (curfix == NULL){
+		fprintf(stderr, "curfis == null in mkdir, something wrong in the loop.\n")
+		return 1;
+	}
+
+	/** At this point, cur is the inode of the parent directory and curfix is the name of the new directory to be added. */
+	// Find position in bitmap and modify the bitmap.
+	unsigned char *inode_bitmap = (void)image + sb->first_ib*A1FS_BLOCK_SIZE;
+	int new_inode_addr = find_free_from_bitmap(inode_bitmap, sb->inode_count);
+	if (new_inode_addr < 0){
+		fprintf(stderr, "All inode full (all inode bitmap 1)\n");
+		return -ENOSPC;
+	}
+	setBitOn(inode_bitmap, new_inode_addr);
+
+	unsigned char *data_bitmap = (void)image + sb->first_db*A1FS_BLOCK_SIZE;
+	int new_ext_addr = find_free_from_bitmap(data_bitmap, sb->dblock_count);
+	if (new_ext_addr < 0){
+		fprintf(stderr, "All data full (all data bitmap 1)\n");
+		return -ENOSPC;
+	}
+	setBitOn(data_bitmap, new_ext_addr);
+
+	int new_data_attr = find_free_from_bitmap(data_bitmap, sb->dblock_count);
+	if(new_data_attr<0){
+		fprintf(stderr,"No more data block.\n");
+		setBitOff(data_bitmap, new_ext_addr);
+		return -ENOSPC;
+	}
+	setBitOn(data_bitmap, new_data_attr);
+
+	// Add inode.
+	a1fs_inode *new_inode = (void *)image + new_inode_addr*A1FS_BLOCK_SIZE;
+	new_inode->links=2;
+	new_inode->mode=S_IFDIR;
+	new_inode->mtime=NULL;
+	new_inode->size=NULL;
+	new_inode->dentry_count=2;
+	new_inode->ext_block=new_ext_addr;
+	new_inode->ext_count=1;
+
+	// Add extent block.
+	a1fs_extent *extent_block = (void *)image + new_ext_addr*A1FS_BLOCK_SIZE;
+	extent_block->start = new_data_attr;
+	extent_block->count = 1;
+
+	// Add data block.
+	a1fs_dentry *self_entry = (void *)image + new_data_attr*A1FS_BLOCK_SIZE;
+	self_entry->ino = new_inode_addr;
+	self_entry->name = ".";
+
+	a1fs_dentry *parent_entry = (void *)self_entry + 1*sizeof(a1fs_dentry);
+	parent_entry->ino = cur_inode;
+	parent_entry->name = "..";
 
 	return 0;
 }
