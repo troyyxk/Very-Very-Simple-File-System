@@ -93,6 +93,35 @@ typedef struct a1fs_extent
 } a1fs_extent;
 
 /** a1fs inode. */
+// typedef struct a1fs_inode
+// {
+// 	/** File mode. */ // either directory or file
+// 	mode_t mode;
+// 	/** Reference count (number of hard links). */
+// 	uint32_t links;
+// 	/** File size in bytes. */
+// 	uint64_t size;
+
+// 	/**
+// 	 * Last modification timestamp.
+// 	 *
+// 	 * Use the CLOCK_REALTIME clock; see "man 3 clock_gettime". Must be updated
+// 	 * when the file (or directory) is created, written to, or its size changes.
+// 	 */
+// 	struct timespec mtime;
+
+// 	/** Extend Block*/
+// 	long ext_block;
+
+// 	/** Number of Extend. */
+// 	short ext_count;
+// 	/** Number of Entry in a Directory. */
+// 	short dentry_count;
+
+// 	uint32_t buffer;
+// } a1fs_inode;
+
+/** a1fs inode. */
 typedef struct a1fs_inode
 {
 	/** File mode. */

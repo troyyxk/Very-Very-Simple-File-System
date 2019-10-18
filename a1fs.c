@@ -267,7 +267,7 @@ static int a1fs_getattr(const char *path, struct stat *st)
 		// cur = pioneer;
 
 		// not a directory and not the last one.
-		if ((!(cur->mode & S_ISDIR)) && fix_count != cur_fix_index)
+		if ((!(cur->mode & S_IFDIR)) && fix_count != cur_fix_index)
 		{
 			return -ENOTDIR;
 		}
@@ -376,7 +376,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 
 	// IMPLEMENT
 	(void)fs;
-	char *cpy_path;
+	char cpy_path[(int)strlen(path)+1];
 	strcpy(cpy_path, path);
 	char *delim = "/";
 	char *curfix = strtok(cpy_path, delim);
@@ -405,7 +405,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 		}
 		cur_fix_index++;
 
-		if ((!(cur->mode & S_ISDIR)))
+		if ((!(cur->mode & S_IFDIR)))
 		{
 			return -ENOTDIR;
 		}

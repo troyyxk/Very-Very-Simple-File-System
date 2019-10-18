@@ -61,8 +61,8 @@ int print_bitmap(unsigned char *bitmap)
 // Set the i-th index of the bitmap to 1
 void setBitOn(uint32_t *A, uint32_t i)
 {
-	int int_bits = sizeof(uint32_t) * 8;
-	A[i / int_bits] |= 1 << (i % int_bits);
+	// int int_bits = sizeof(uint32_t) * 8;
+	A[i / 32] |= 1 << (i % 32);
 }
 
 /** Command line options. */
@@ -197,11 +197,13 @@ int init_super(a1fs_superblock *sb, int n_inode, int n_sb, int n_ib, int n_db, i
 }
 
 /** The purpose of this function is solely for creating the initial inode for the file system. */
-int init_inode(a1fs_superblock *sb, void *image, a1fs_blk_t *inode_bitmap)
+int init_inode(a1fs_superblock *sb, void *image, a1fs_blk_t *inode_bitmap, uint64_t size)
 {
 	a1fs_inode *inode = (void *)image + (A1FS_BLOCK_SIZE * sb->first_inode);
 	inode->mode = S_IFDIR;
 	inode->links = 2;
+	inode->size = size;
+	// time
 	inode->ext_block = sb->first_data;
 	inode->ext_count = 1;
 	inode->dentry_count = 2;
@@ -257,10 +259,10 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 
 	/** Amount */
 
-	int n_block = (double)size / (double)A1FS_BLOCK_SIZE;
+	int n_block = (double)size / (double)A1FS_BLOCK_SIZE;  // flooring
 	int n_sb = 1;
 	int n_inode = opts->n_inodes;
-	int n_ib = ceil_division(n_inode, A1FS_BLOCK_SIZE * 8);
+	int n_ib = ceil_division(n_inode, A1FS_BLOCK_SIZE * 8);  // times 8 because A1FS_BLOCK_SIZE is in bytes and we only need bits for bitmap
 	int n_db = ceil_division(n_block, A1FS_BLOCK_SIZE * 8);
 
 	// in byte
@@ -302,7 +304,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 		data_bitmap[i] = 0;
 	}
 
-	if (init_inode(sb, image, inode_bitmap) != 0)
+	if (init_inode(sb, image, inode_bitmap, size) != 0)
 	{
 		fprintf(stderr, "Failed to Init Inode\n");
 		return false;
