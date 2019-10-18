@@ -39,10 +39,9 @@ int main(int argc, char **argv) {
     }
 
     // Test using the current path
-    char *curr_path = ".";
+    char *path = ".";
 
     // IMPLEMENTATION
-    (void)fs;
     char cpy_path[(int)strlen(path)+1];
     strcpy(cpy_path, path);
     char *delim = "/";
@@ -53,7 +52,6 @@ int main(int argc, char **argv) {
     int cur_fix_index = 1;
 
     // Loop through the tokens on the path to find the location we are interested in
-    void *image = fs->image;
     a1fs_superblock *sb = (void *)image;
     a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
     a1fs_inode *cur = first_inode;
@@ -65,7 +63,7 @@ int main(int argc, char **argv) {
         // not a directory
         if (!(cur->mode & S_IFDIR))
         {
-            return -ENOTDIR;
+            return -1;
         }
         cur_fix_index++;
 
