@@ -252,6 +252,7 @@ static int a1fs_getattr(const char *path, struct stat *st)
 	// a1fs_inode *pioneer = first_inode;
 	a1fs_inode *cur = first_inode;
 
+	a1fs_extent *extent;
 	a1fs_dentry *dentry;
 
 	// // more pioneer than pioneer
@@ -274,7 +275,9 @@ static int a1fs_getattr(const char *path, struct stat *st)
 		cur_fix_index++;
 		// indicator for whether the directory is found, 1 for ont found and 0 for found
 		int flag = 1;
-		dentry = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+
+		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
 		for (int i = 0; i < cur->dentry_count; cur++)
 		{
 			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
