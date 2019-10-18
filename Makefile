@@ -30,6 +30,9 @@ readimage: readimage.o
 getattr_test: getattr_test.o
 	$(CC) $^ -o $@ $(LDFLAGS)
 
+mkdir_test: mkdir_test.o
+	$(CC) $^ -o $@ $(LDFLAGS)
+
 SRC_FILES = $(wildcard *.c)
 OBJ_FILES = $(SRC_FILES:.c=.o)
 
