@@ -22,6 +22,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "a1fs.h"
 #include "map.h"
@@ -235,6 +236,14 @@ int init_root(a1fs_superblock *sb, void *image, a1fs_blk_t *data_bitmap)
 
 	setBitOn(data_bitmap, 1);
 	// NOT SURE
+
+	// Init the inode for the root directory
+    a1fs_inode *rd_inode = (void *)(image + sb->first_inode * A1FS_BLOCK_SIZE);
+    rd_inode->mode = 'd';
+    clock_gettime(CLOCK_REALTIME, &(rd_inode->mtime));
+    rd_inode->size = 0;
+    rd_inode->links = 0;
+    rd_inode->dentry_count = 0;
 
 	return 0;
 }
