@@ -385,7 +385,7 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     char *curfix = strtok(cpy_path, delim);
 
     // clarify the confussion of treating the last one as none directory and return error
-    int fix_count = num_entry_name(path);
+    // int fix_count = num_entry_name(path);
     int cur_fix_index = 1;
 
     // Loop through the tokens on the path to find the location we are interested in
@@ -394,16 +394,20 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
     a1fs_inode *cur = first_inode;
 
+	a1fs_extent *extent;
     a1fs_dentry *dentry;
 
     while (curfix != NULL) {
         // not a directory
-        if ((!(cur->mode & S_ISDIR))
+        if (!(cur->mode & S_IFDIR))
         {
             return -ENOTDIR;
         }
         cur_fix_index++;
-        dentry = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+
+		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+
         for (int i = 0; i < cur->dentry_count; cur++)
         {
             dentry = (void *)dentry + i * sizeof(a1fs_dentry);
