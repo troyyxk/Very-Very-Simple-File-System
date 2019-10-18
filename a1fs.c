@@ -334,16 +334,62 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	//NOTE: This is just a placeholder that allows the file system to be mounted
 	// without errors. You should remove this from your implementation.
-	if (strcmp(path, "/") == 0)
-	{
-		filler(buf, ".", NULL, 0);
-		filler(buf, "..", NULL, 0);
-		return 0;
-	}
+//	if (strcmp(path, "/") == 0)
+//	{
+//		filler(buf, ".", NULL, 0);
+//		filler(buf, "..", NULL, 0);
+//		return 0;
+//	}
 
-	//TODO
+	// IMPLEMENTATION
 	(void)fs;
-	return -ENOSYS;
+    char cpy_path[(int)strlen(path)+1];
+    strcpy(cpy_path, path);
+    char *delim = "/";
+    char *curfix = strtok(cpy_path, delim);
+
+    // clarify the confussion of treating the last one as none directory and return error
+    int fix_count = num_entry_name(path);
+    int cur_fix_index = 1;
+
+    // Loop through the tokens on the path to find the location we are interested in
+    void *image = fs->image;
+    a1fs_superblock *sb = (void *)image;
+    a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
+    a1fs_inode *cur = first_inode;
+
+    a1fs_dentry *dentry;
+
+    while (curfix != NULL) {
+        // not a directory
+        if ((!(cur->mode & S_ISDIR))
+        {
+            return -ENOTDIR;
+        }
+        cur_fix_index++;
+        dentry = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+        for (int i = 0; i < cur->dentry_count; cur++)
+        {
+            dentry = (void *)dentry + i * sizeof(a1fs_dentry);
+            if (strcmp(dentry->name, curfix) == 0)
+            { // directory/file is found
+                cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);
+                break;
+            }
+        }
+
+        // Now cur should be pointing to the directory we are reading
+        a1fs_dentry *entries = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+        for (int i = 0; i < cur->dentry_count; i++) {
+            filler(buf, entries[i].name, NULL, 0);
+        }
+    }
+
+
+        // Success
+        return 0;
+
+//	return -ENOSYS;
 }
 
 /**
