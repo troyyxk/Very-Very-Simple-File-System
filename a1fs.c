@@ -256,6 +256,8 @@ static int a1fs_getattr(const char *path, struct stat *st)
 	// time_t st_mtime;
 	// // time_t st_ctime;
 
+	printf("Start a1fs_getattr with path %s.\n", path);
+
 	if (strlen(path) >= A1FS_PATH_MAX)
 		return -ENAMETOOLONG;
 	fs_ctx *fs = get_fs();
@@ -316,7 +318,9 @@ static int a1fs_getattr(const char *path, struct stat *st)
 		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
 		for (int i = 0; i < cur->dentry_count; i++)
 		{
+            printf("Enter the for loop with i == %d\n", i);
 			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
+            printf("Debtry Name: %s\n", dentry->name);
 			if (strcmp(dentry->name, curfix) == 0)
 			{ // directory/file is found
 				cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);
@@ -325,8 +329,11 @@ static int a1fs_getattr(const char *path, struct stat *st)
 			}
 		}
 
+		printf("Exit for loop.\n");
+
 		if (flag)
 		{ // does not exist
+            fprintf(stderr, "Does not exist.\n");
 			return -ENOENT;
 		}
 
@@ -364,6 +371,7 @@ static int a1fs_getattr(const char *path, struct stat *st)
 static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 						off_t offset, struct fuse_file_info *fi)
 {
+	printf("Start a1fs_readdir.\n");
 	(void)offset; // unused
 	(void)fi;	 // unused
 	fs_ctx *fs = get_fs();
@@ -458,6 +466,7 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
  */
 static int a1fs_mkdir(const char *path, mode_t mode)
 {
+	printf("Start a1fs_mkdir with path %s.\n", path);
 	fs_ctx *fs = get_fs();
 
 	//TODO
@@ -490,7 +499,23 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	while (curfix != NULL)
 	{
 		// cur = pioneer;
+        printf("Enter the while loop with curfix: %s\n", curfix);
 
+		cur->mode = S_IFDIR;
+
+		if ((!(cur->mode & S_IFDIR)))
+		{
+            fprintf(stderr, "Not a directory and not the last one.\n");
+			return -ENOTDIR;
+		}
+        printf("cur->dentry_count: %d\n", cur->dentry_count);
+		// indicator for whether the directory is found, 1 for ont found and 0 for found
+		int flag = 1;
+		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+
+		printf("dentry->ino: %d", dentry->ino);
+		printf("Before check if the last prefix. fix_count == %d, cur_fix_index == %d.\n", fix_count, cur_fix_index);
 		// not a directory and not the last one.
 		if (fix_count == cur_fix_index)
 		{
@@ -499,20 +524,10 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 			/** At this point, cur is the inode of the parent directory and curfix is the name of the new directory to be added. */
 		}
 		cur_fix_index++;
-		cur->mode = S_IFDIR;
-
-		if ((!(cur->mode & S_IFDIR)))
-		{
-            fprintf(stderr, "Not a directory and not the last one.\n");
-			return -ENOTDIR;
-		}
-		// indicator for whether the directory is found, 1 for ont found and 0 for found
-		int flag = 1;
-		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
-		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
 
 		for (int i = 0; i < cur->dentry_count; i++)
 		{
+            printf("Enter the for loop with i == %d\n", i);
 			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
 			if (strcmp(dentry->name, curfix) == 0)
 			{ // directory/file is found
@@ -521,6 +536,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 				break;
 			}
 		}
+		printf("Exit for loop.\n");
 
 		if (flag)
 		{ // does not exist
@@ -575,7 +591,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	a1fs_inode *new_inode = (void *)inode_block + new_inode_addr*sizeof(a1fs_inode);
 	new_inode->links=2;
 	new_inode->mode=S_IFDIR;
-	// new_inode->mtime=NULL;
+	clock_gettime(CLOCK_REALTIME, &(new_inode->mtime));
 	// new_inode->size=NULL;
 	new_inode->dentry_count=2;
 	new_inode->ext_block=sb->first_data + new_ext_addr;

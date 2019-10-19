@@ -117,7 +117,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    char *path = "/./test_dir";
+    char *path = "/test_dir";
 
     // a1fs_superblock *sb = (a1fs_superblock *)(image);
 
@@ -140,22 +140,29 @@ int main(int argc, char **argv)
 
 	int cur_inode;
 
+	printf("fix_count: %d\n", fix_count);
 	while (curfix != NULL)
 	{
+		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
 		// cur = pioneer;
         printf("Enter the while loop with curfix: %s\n", curfix);
+		printf("cur_fix_index: %d\n", cur_fix_index);
 
 
+		printf("dentry->ino: %d", dentry->ino);
+		printf("Before check if the last prefix. fix_count == %d, cur_fix_index == %d.\n", fix_count, cur_fix_index);
 		// not a directory and not the last one.
 		if (fix_count == cur_fix_index)
 		{
-			cur_inode = dentry->ino;
+			cur_inode = (int)dentry->ino;
+			printf("cur_inode == dentry->ino == %d\n", cur_inode);
 			break;
 			/** At this point, cur is the inode of the parent directory and curfix is the name of the new directory to be added. */
 		}
 		cur_fix_index++;
 
-cur->mode = S_IFDIR;
+		cur->mode = S_IFDIR;
 		if ((!(cur->mode & S_IFDIR)))
 		{
             fprintf(stderr, "Not a directory and not the last one.\n");
@@ -163,11 +170,10 @@ cur->mode = S_IFDIR;
 		}
 		// indicator for whether the directory is found, 1 for ont found and 0 for found
 		int flag = 1;
-		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
-		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
         printf("cur->dentry_count: %d\n", cur->dentry_count);
 		for (int i = 0; i < cur->dentry_count; i++)
 		{
+			// printf();
             printf("Enter the for loop with i == %d\n", i);
 			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
 			if (strcmp(dentry->name, curfix) == 0)
@@ -186,6 +192,8 @@ cur->mode = S_IFDIR;
 
 		curfix = strtok(NULL, delim);
 	}
+	printf("Exit for loop.\n");
+	
 
 	if (curfix == NULL){
 		fprintf(stderr, "curfis == null in mkdir, something wrong in the loop.\n");
