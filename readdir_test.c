@@ -66,10 +66,14 @@ int main(int argc, char **argv) {
         }
         cur_fix_index++;
 
+        // Find the total number of extents in the directory
+//        int extent_count = cur->ext_count;
+        // For tracking the extents in the directory
+//        int cur_ext_index = 0;
         extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
         dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
 
-        for (int i = 0; i < cur->dentry_count; cur++)
+        for (int i = 0; i < cur->dentry_count; i++)
         {
             dentry = (void *)dentry + i * sizeof(a1fs_dentry);
             if (strcmp(dentry->name, curfix) == 0)
@@ -84,7 +88,7 @@ int main(int argc, char **argv) {
         for (int i = 0; i < cur->dentry_count; i++) {
 //            filler(buf, entries[i].name, NULL, 0);
             printf("Current entry:\n");
-	    printf("name: %s\n", entries[i].name);
+	        printf("name: %s\n", entries[i].name);
             printf("curfix: %s\n", curfix);
             printf("cur_i: %d/%d\n\n", i, cur->dentry_count);
         }
