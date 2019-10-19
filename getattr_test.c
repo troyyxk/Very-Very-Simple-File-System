@@ -63,7 +63,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    char *path = "/.Trash";
+    char *path = "/test_dir";
 
     // a1fs_superblock *sb = (a1fs_superblock *)(image);
 
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 		{
             printf("Enter the for loop with i == %d\n", i);
 			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
-            printf("Debtry Name: %s\n", dentry->name);
+            printf("Dentry Inode : %d, Debtry Name: %s\n", dentry->ino, dentry->name);
 			if (strcmp(dentry->name, curfix) == 0)
 			{ // directory/file is found
 				cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);

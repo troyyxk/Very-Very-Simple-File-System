@@ -273,8 +273,12 @@ int main(int argc, char **argv)
 	// Modify dentry of the parent directory.
 	a1fs_dentry *first_parent_entry = (void *)image + cur_ext_block->start*A1FS_BLOCK_SIZE;
 	a1fs_dentry *tareget_entry = (void *)first_parent_entry + sizeof(a1fs_dentry)*(cur->dentry_count - 1);
-	tareget_entry->ino =  new_inode_addr + sb->first_data;
+	tareget_entry->ino =  new_inode_addr;
 	strcpy(tareget_entry->name, curfix);
+	printf("tareget_entry->name: %s\n", tareget_entry->name);
+	printf("tareget_entry->ino: %d\n", tareget_entry->ino);
+
+
 
 	// Add extent block.
 	a1fs_extent *extent_block = (void *)first_data + new_ext_addr*A1FS_BLOCK_SIZE;
@@ -284,11 +288,11 @@ int main(int argc, char **argv)
 
 	// Add data block.
 	a1fs_dentry *self_entry = (void *)first_data + new_data_attr*A1FS_BLOCK_SIZE;
-	self_entry->ino = cur_inode;
+	self_entry->ino = new_inode_addr;
 	strcpy(self_entry->name, ".");
 
 	a1fs_dentry *parent_entry = (void *)self_entry + 1*sizeof(a1fs_dentry);
-	parent_entry->ino = new_inode_addr;
+	parent_entry->ino = cur_inode;
 	strcpy(parent_entry->name, "..");
 
     // printf("\n");
