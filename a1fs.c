@@ -421,13 +421,15 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         // Now cur should be pointing to the directory we are reading
         a1fs_dentry *entries = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
         for (int i = 0; i < cur->dentry_count; i++) {
-            filler(buf, entries[i].name, NULL, 0);
+            if (filler(buf, entries[i].name, NULL, 0) != 0) {
+                return -ENOMEM;
+            };
         }
     }
 
 
-        // Success
-        return 0;
+    // Success
+    return 0;
 
 //	return -ENOSYS;
 }
