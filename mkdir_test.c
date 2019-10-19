@@ -166,7 +166,7 @@ cur->mode = S_IFDIR;
 		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
 		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
         printf("cur->dentry_count: %d\n", cur->dentry_count);
-		for (int i = 0; i < cur->dentry_count; cur++)
+		for (int i = 0; i < cur->dentry_count; i++)
 		{
             printf("Enter the for loop with i == %d\n", i);
 			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
@@ -235,6 +235,9 @@ cur->mode = S_IFDIR;
     print_bitmap(data_bitmap);
     sb->free_dblock_count -=2;
 
+	// Modify inode.
+	cur->dentry_count += 1;
+
 	// Add inode.
     void *inode_block = (void *)(image + sb->first_inode * A1FS_BLOCK_SIZE);
 	a1fs_inode *new_inode = (void *)inode_block + new_inode_addr*sizeof(a1fs_inode);
@@ -252,8 +255,20 @@ cur->mode = S_IFDIR;
     print_bitmap(inode_bitmap);
     printf("\n");
 
-	// Add extent block.
 	void *first_data = (void *)image + sb->first_data*A1FS_BLOCK_SIZE;
+	// // Modify extent.
+	a1fs_extent *cur_ext_block = (void *)image + cur->ext_block*A1FS_BLOCK_SIZE;
+	// a1fs_extent *new_ext = (void *)cur_ext_block + (cur->ext_count - 1) * sizeof(a1fs_extent);
+	// new_ext->start = new_inode->ext_block;
+	// new_ext->count = 1;
+
+	// Modify dentry of the parent directory.
+	a1fs_dentry *first_parent_entry = (void *)image + cur_ext_block->start*A1FS_BLOCK_SIZE;
+	a1fs_dentry *tareget_entry = (void *)first_parent_entry + sizeof(a1fs_dentry)*(cur->dentry_count - 1);
+	tareget_entry->ino =  new_inode_addr + sb->first_data;
+	strcpy(tareget_entry->name, curfix);
+
+	// Add extent block.
 	a1fs_extent *extent_block = (void *)first_data + new_ext_addr*A1FS_BLOCK_SIZE;
 	extent_block->start = new_data_attr + sb->first_data;
 	extent_block->count = 1;
@@ -261,11 +276,11 @@ cur->mode = S_IFDIR;
 
 	// Add data block.
 	a1fs_dentry *self_entry = (void *)first_data + new_data_attr*A1FS_BLOCK_SIZE;
-	self_entry->ino = new_inode_addr;
+	self_entry->ino = cur_inode;
 	strcpy(self_entry->name, ".");
 
 	a1fs_dentry *parent_entry = (void *)self_entry + 1*sizeof(a1fs_dentry);
-	parent_entry->ino = cur_inode;
+	parent_entry->ino = new_inode_addr;
 	strcpy(parent_entry->name, "..");
 
     // printf("\n");
