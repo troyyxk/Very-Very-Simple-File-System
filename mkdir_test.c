@@ -11,6 +11,23 @@
 #include "a1fs.h"
 #include "map.h"
 
+int print_bitmap(a1fs_blk_t *bitmap)
+{
+    for (int byte = 0; byte < 16; byte++)
+    {
+        // Print the bits within the current byte
+        for (int bit = 0; bit < 8; bit++)
+        {
+            printf("%d", (bitmap[byte] & (1 << bit)) > 0);
+        }
+        // Print the space to separate bytes
+        printf(" ");
+    }
+    // Line break
+    printf("\n");
+    return 0;
+}
+
 /**
  * Return the number of entry names in a path
  *
@@ -66,6 +83,7 @@ int checkBit(uint32_t *bitmap, uint32_t i)
 
 /** Find a free inode from the inode bitmap. */
 int find_free_from_bitmap(a1fs_blk_t *bitmap, int size){
+    printf("Start finding free inode with inode bitmap.\n");
 	for (int i = 0; i < size; i++){
 		if(checkBit((uint32_t *)bitmap, i) == 0){
 			return i;
@@ -125,6 +143,8 @@ int main(int argc, char **argv)
 	while (curfix != NULL)
 	{
 		// cur = pioneer;
+        printf("Enter the while loop with curfix: %s\n", curfix);
+
 
 		// not a directory and not the last one.
 		if (fix_count == cur_fix_index)
@@ -135,6 +155,7 @@ int main(int argc, char **argv)
 		}
 		cur_fix_index++;
 
+cur->mode = S_IFDIR;
 		if ((!(cur->mode & S_IFDIR)))
 		{
             fprintf(stderr, "Not a directory and not the last one.\n");
@@ -144,8 +165,10 @@ int main(int argc, char **argv)
 		int flag = 1;
 		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
 		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+        printf("cur->dentry_count: %d\n", cur->dentry_count);
 		for (int i = 0; i < cur->dentry_count; cur++)
 		{
+            printf("Enter the for loop with i == %d\n", i);
 			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
 			if (strcmp(dentry->name, curfix) == 0)
 			{ // directory/file is found
@@ -173,45 +196,71 @@ int main(int argc, char **argv)
 	// Find position in bitmap and modify the bitmap.
 	a1fs_blk_t *inode_bitmap = (void *)image + sb->first_ib*A1FS_BLOCK_SIZE;
 	int new_inode_addr = find_free_from_bitmap(inode_bitmap, sb->inode_count);
+    sb->free_inode_count -= 1;
+    printf("Free inode location: %d (should be 1)\n", new_inode_addr);
 	if (new_inode_addr < 0){
 		fprintf(stderr, "All inode full (all inode bitmap 1)\n");
 		return 1;
 	}
 	setBitOn(inode_bitmap, new_inode_addr);
+    printf("Inode bitmap: ");
+    print_bitmap(inode_bitmap);
 
 	a1fs_blk_t *data_bitmap = (void *)image + sb->first_db*A1FS_BLOCK_SIZE;
+        printf("Block bitmap: ");
+    print_bitmap(data_bitmap);
 	int new_ext_addr = find_free_from_bitmap(data_bitmap, sb->dblock_count);
+    printf("Free extent block location: %d (should be 2)\n", new_ext_addr);
 	if (new_ext_addr < 0){
 		fprintf(stderr, "All data full (all data bitmap 1)\n");
 		return 1;
 	}
 	setBitOn(data_bitmap, new_ext_addr);
+        printf("Inode bitmap: ");
+    print_bitmap(inode_bitmap);
+            printf("Block bitmap: ");
+    print_bitmap(data_bitmap);
 
 	int new_data_attr = find_free_from_bitmap(data_bitmap, sb->dblock_count);
+    printf("Free datablock location: %d (should be 3)\n", new_data_attr);
 	if(new_data_attr<0){
 		fprintf(stderr,"No more data block.\n");
 		setBitOff(data_bitmap, new_ext_addr);
 		return 1;
 	}
 	setBitOn(data_bitmap, new_data_attr);
+        printf("Inode bitmap: ");
+    print_bitmap(inode_bitmap);
+            printf("Block bitmap: ");
+    print_bitmap(data_bitmap);
+    sb->free_dblock_count -=2;
 
 	// Add inode.
-	a1fs_inode *new_inode = (void *)image + new_inode_addr*A1FS_BLOCK_SIZE;
+    void *inode_block = (void *)(image + sb->first_inode * A1FS_BLOCK_SIZE);
+	a1fs_inode *new_inode = (void *)inode_block + new_inode_addr*sizeof(a1fs_inode);
 	new_inode->links=2;
 	new_inode->mode=S_IFDIR;
 	// new_inode->mtime=NULL;
 	// new_inode->size=NULL;
 	new_inode->dentry_count=2;
-	new_inode->ext_block=new_ext_addr;
+	new_inode->ext_block=sb->first_data + new_ext_addr;
 	new_inode->ext_count=1;
+	
+	printf("\n");
+    printf("Final testing:\n");
+    printf("Inode bitmap with the one in mkdir:\n");
+    print_bitmap(inode_bitmap);
+    printf("\n");
 
 	// Add extent block.
-	a1fs_extent *extent_block = (void *)image + new_ext_addr*A1FS_BLOCK_SIZE;
-	extent_block->start = new_data_attr;
+	void *first_data = (void *)image + sb->first_data*A1FS_BLOCK_SIZE;
+	a1fs_extent *extent_block = (void *)first_data + new_ext_addr*A1FS_BLOCK_SIZE;
+	extent_block->start = new_data_attr + sb->first_data;
 	extent_block->count = 1;
 
+
 	// Add data block.
-	a1fs_dentry *self_entry = (void *)image + new_data_attr*A1FS_BLOCK_SIZE;
+	a1fs_dentry *self_entry = (void *)first_data + new_data_attr*A1FS_BLOCK_SIZE;
 	self_entry->ino = new_inode_addr;
 	strcpy(self_entry->name, ".");
 
@@ -219,6 +268,25 @@ int main(int argc, char **argv)
 	parent_entry->ino = cur_inode;
 	strcpy(parent_entry->name, "..");
 
+    // printf("\n");
+    // printf("Final testing:\n");
+    // printf("Inode bitmap with the one in mkdir:\n");
+    // print_bitmap(inode_bitmap);
+    // printf("\n");
+    
+
+    printf("Inode bitmap with readimage method:\n");    
+    a1fs_blk_t *in_bitmap = (void *)image + sb->first_ib*A1FS_BLOCK_SIZE;
+    // for (int bit = 0; bit < sb->inode_count; bit++)
+    // {
+    //     printf("%d", (inode_bitmap[bit] & (1 << bit)) > 0);
+    //     if ((bit + 1) % 5 == 0)
+    //     {
+    //         printf(" ");
+    //     }
+    // }
+    print_bitmap(in_bitmap);
+    printf("\n");
 
     return 0;
 }

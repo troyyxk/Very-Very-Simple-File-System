@@ -185,13 +185,13 @@ int init_super(a1fs_superblock *sb, int n_inode, int n_sb, int n_ib, int n_db, i
 	sb->first_data = n_sb + n_ib + n_db + n_iblock;
 
 	// Amount
-	sb->inode_count = n_inode;
 	sb->ib_count = n_ib;
 	sb->db_count = n_db;
 	sb->iblock_count = n_iblock;
-	sb->free_iblock_count = n_iblock;
+	sb->inode_count = n_inode;
+	sb->free_inode_count = n_inode - 1;
 	sb->dblock_count = n_data;
-	sb->free_dblock_count = n_data;
+	sb->free_dblock_count = n_data - 2;
 
 	return 0;
 }

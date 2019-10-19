@@ -70,7 +70,7 @@ typedef struct a1fs_superblock
 	/** Number of inode Blocks. */
 	int iblock_count;
 	/** Number of free inode block. */
-	int free_iblock_count;
+	int free_inode_count;
 	/** Number of data Blocks. */
 	int dblock_count;
 	/** Number of free data block. */

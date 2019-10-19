@@ -11,11 +11,20 @@
 #include "a1fs.h"
 #include "map.h"
 
-// Pointer to the 0th byte of the disk
-unsigned char *disk;
+// Pointer to the 0th byte of the image
+unsigned char *image;
+
+/** Check in the bitmap if the bit is 0 (free) */
+int checkBit(uint32_t *bitmap, uint32_t i)
+{
+	if((bitmap[i / 32] & 1 << (i % 32)) != 0){
+		return 1;
+	}
+	return 0;
+}
 
 /** Print Bitmap */
-int print_bitmap(unsigned char *bitmap)
+int print_bitmap(a1fs_blk_t *bitmap)
 {
     for (int byte = 0; byte < 16; byte++)
     {
@@ -47,15 +56,15 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    // Map the disk image into memory so that we don't have to do any reads and writes
-    disk = mmap(NULL, 128 * 1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (disk == MAP_FAILED)
+    // Map the image image into memory so that we don't have to do any reads and writes
+    image = mmap(NULL, 128 * 1024, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (image == MAP_FAILED)
     {
         perror("mmap");
         exit(1);
     }
 
-    a1fs_superblock *sb = (a1fs_superblock *)(disk);
+    a1fs_superblock *sb = (a1fs_superblock *)(image);
 
     printf("Super Block:\n");
 
@@ -74,8 +83,8 @@ int main(int argc, char **argv)
     printf("    Number of Inodes: %d\n", sb->inode_count);
     printf("    Number of Inode Bitmap blocks: %d\n", sb->ib_count);
     printf("    Number of Data Bitmap blocks: %d\n", sb->db_count);
-    printf("    Number of inode Blocks: %d\n", sb->iblock_count);
-    printf("    Number of free inode block: %d\n", sb->free_iblock_count);
+    printf("    Number of inode: %d\n", sb->inode_count);
+    printf("    Number of free inode: %d\n", sb->free_inode_count);
     printf("    Number of data Blocks: %d\n", sb->dblock_count);
     printf("    Number of free data block: %d\n", sb->free_dblock_count);
 
@@ -83,7 +92,9 @@ int main(int argc, char **argv)
 
     // Print Inode Bitmap
     printf("Inode bitmap: ");
-    unsigned char *inode_bitmap = (unsigned char *)(disk + sb->first_ib * A1FS_BLOCK_SIZE);
+	// a1fs_blk_t *inode_bitmap = (void *)image + sb->first _ib*A1FS_BLOCK_SIZE;
+    
+    a1fs_blk_t *inode_bitmap = (void *)image + sb->first_ib*A1FS_BLOCK_SIZE;
     // for (int bit = 0; bit < sb->inode_count; bit++)
     // {
     //     printf("%d", (inode_bitmap[bit] & (1 << bit)) > 0);
@@ -97,27 +108,29 @@ int main(int argc, char **argv)
 
     // Print Block Bitmap
     printf("Block bitmap: ");
-    unsigned char *block_bitmap = (unsigned char *)(disk + sb->first_db * A1FS_BLOCK_SIZE);
+	// a1fs_blk_t *data_bitmap = (void *)image + sb->first_db*A1FS_BLOCK_SIZE;
+
+    a1fs_blk_t *data_bitmap = (void *)image + sb->first_db*A1FS_BLOCK_SIZE;
     // for (int bit = 0; bit < sb->dblock_count; bit++)
     // {
-    //     printf("%d", (block_bitmap[bit] & (1 << bit)) > 0);
+    //     printf("%d", (data_bitmap[bit] & (1 << bit)) > 0);
     //     if ((bit + 1) % 5 == 0)
     //     {
     //         printf(" ");
     //     }
     // }
-    print_bitmap(block_bitmap);
+    print_bitmap(data_bitmap);
     printf("\n");
 
     printf("\n");
 
     // Print Inode
-    printf("Inode: ");
-    void *inode_block = (void *)(disk + sb->first_inode * A1FS_BLOCK_SIZE);
+    printf("Inode: \n");
+    void *inode_block = (void *)(image + sb->first_inode * A1FS_BLOCK_SIZE);
     a1fs_inode *inode;
     for (int bit = 0; bit < sb->inode_count; bit++)
     {
-        if ((inode_bitmap[bit] & (1 << bit)) > 0)
+        if (checkBit(inode_bitmap, bit))
         { // bit map is 1
             inode = (void *)inode_block + bit * sizeof(a1fs_inode);
             // bitmap count starts form 0
@@ -129,19 +142,19 @@ int main(int argc, char **argv)
     printf("Directory Block:\n");
     for (int bit = 0; bit < sb->inode_count; bit++)
     {
-        if ((inode_bitmap[bit] & (1 << bit)) > 0)
+        if (checkBit(inode_bitmap, bit))
         { // bit map is 1
             inode = (void *)inode_block + bit * sizeof(a1fs_inode);
             if (inode->mode & S_IFDIR)
             { // this is a directory
                 printf("Directory Extend Block Number: %ld (for Inode Number %d)\n", inode->ext_block, bit);
-                a1fs_extent *first_extent = (void *)disk + (inode->ext_block * A1FS_BLOCK_SIZE);
+                a1fs_extent *first_extent = (void *)image + (inode->ext_block * A1FS_BLOCK_SIZE);
                 a1fs_extent *cur_extent;
                 for (int i = 0; i < inode->ext_count; i++)
                 {
                     cur_extent = (void *)first_extent + (i * sizeof(a1fs_extent));
                     printf("Extend Number: %d, Start: %d, Count: %d\n", i, cur_extent->start, cur_extent->count);
-                    a1fs_dentry *first_entry = (void *)disk + (A1FS_BLOCK_SIZE * cur_extent->start);
+                    a1fs_dentry *first_entry = (void *)image + (A1FS_BLOCK_SIZE * cur_extent->start);
                     a1fs_dentry *cur_entry;
                     for (int j = 0; j < inode->dentry_count; j++)
                     {
