@@ -263,11 +263,9 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	int n_sb = 1;
 	int n_inode = opts->n_inodes;
 	int n_ib = ceil_division(n_inode, A1FS_BLOCK_SIZE * 8);  // times 8 because A1FS_BLOCK_SIZE is in bytes and we only need bits for bitmap
-	int n_db = ceil_division(n_block, A1FS_BLOCK_SIZE * 8);
 
-	// in byte
 	int n_iblock = ceil_division(n_inode * inode_size, A1FS_BLOCK_SIZE);
-
+    int n_db = ceil_division(n_block - n_sb - n_iblock - n_ib, A1FS_BLOCK_SIZE * 8);
 	// int n_ib =  ceil((double)n_inode / ((double)A1FS_BLOCK_SIZE * 8));
 	// int n_db = ceil((double)n_block / ((double)A1FS_BLOCK_SIZE * 8));
 
