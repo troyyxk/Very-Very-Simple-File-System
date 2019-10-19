@@ -212,11 +212,11 @@ int main(int argc, char **argv)
 	}
 	setBitOn(inode_bitmap, new_inode_addr);
     printf("Inode bitmap: ");
-    print_bitmap(inode_bitmap);
+    // print_bitmap(inode_bitmap);
 
 	a1fs_blk_t *data_bitmap = (void *)image + sb->first_db*A1FS_BLOCK_SIZE;
         printf("Block bitmap: ");
-    print_bitmap(data_bitmap);
+    // print_bitmap(data_bitmap);
 	int new_ext_addr = find_free_from_bitmap(data_bitmap, sb->dblock_count);
     printf("Free extent block location: %d (should be 2)\n", new_ext_addr);
 	if (new_ext_addr < 0){
@@ -225,9 +225,9 @@ int main(int argc, char **argv)
 	}
 	setBitOn(data_bitmap, new_ext_addr);
         printf("Inode bitmap: ");
-    print_bitmap(inode_bitmap);
+    // print_bitmap(inode_bitmap);
             printf("Block bitmap: ");
-    print_bitmap(data_bitmap);
+    // print_bitmap(data_bitmap);
 
 	int new_data_attr = find_free_from_bitmap(data_bitmap, sb->dblock_count);
     printf("Free datablock location: %d (should be 3)\n", new_data_attr);
@@ -238,9 +238,9 @@ int main(int argc, char **argv)
 	}
 	setBitOn(data_bitmap, new_data_attr);
         printf("Inode bitmap: ");
-    print_bitmap(inode_bitmap);
+    // print_bitmap(inode_bitmap);
             printf("Block bitmap: ");
-    print_bitmap(data_bitmap);
+    // print_bitmap(data_bitmap);
     sb->free_dblock_count -=2;
 
 	// Modify inode.
@@ -260,7 +260,7 @@ int main(int argc, char **argv)
 	printf("\n");
     printf("Final testing:\n");
     printf("Inode bitmap with the one in mkdir:\n");
-    print_bitmap(inode_bitmap);
+    // print_bitmap(inode_bitmap);
     printf("\n");
 
 	void *first_data = (void *)image + sb->first_data*A1FS_BLOCK_SIZE;
@@ -298,12 +298,12 @@ int main(int argc, char **argv)
     // printf("\n");
     // printf("Final testing:\n");
     // printf("Inode bitmap with the one in mkdir:\n");
-    // print_bitmap(inode_bitmap);
+    // // print_bitmap(inode_bitmap);
     // printf("\n");
     
 
-    printf("Inode bitmap with readimage method:\n");    
-    a1fs_blk_t *in_bitmap = (void *)image + sb->first_ib*A1FS_BLOCK_SIZE;
+    // printf("Inode bitmap with readimage method:\n");    
+    // a1fs_blk_t *in_bitmap = (void *)image + sb->first_ib*A1FS_BLOCK_SIZE;
     // for (int bit = 0; bit < sb->inode_count; bit++)
     // {
     //     printf("%d", (inode_bitmap[bit] & (1 << bit)) > 0);
@@ -312,7 +312,7 @@ int main(int argc, char **argv)
     //         printf(" ");
     //     }
     // }
-    print_bitmap(in_bitmap);
+    // print_bitmap(in_bitmap);
     printf("\n");
 
     return 0;

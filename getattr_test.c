@@ -85,7 +85,9 @@ int main(int argc, char **argv)
 	a1fs_inode *cur = first_inode;
 
 	a1fs_extent *extent;
+	a1fs_dentry *first_dentry;
 	a1fs_dentry *dentry;
+
 
 	// // more pioneer than pioneer
 	// a1fs_inode *visioner;
@@ -111,12 +113,12 @@ int main(int argc, char **argv)
 		int flag = 1;
 		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
 
-		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+		first_dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
         printf("cur->dentry_count: %d\n", cur->dentry_count);
 		for (int i = 0; i < cur->dentry_count; i++)
 		{
             printf("Enter the for loop with i == %d\n", i);
-			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
+			dentry = (void *)first_dentry + i * sizeof(a1fs_dentry);
             printf("Dentry Inode : %d, Debtry Name: %s\n", dentry->ino, dentry->name);
 			if (strcmp(dentry->name, curfix) == 0)
 			{ // directory/file is found
