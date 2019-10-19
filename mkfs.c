@@ -239,7 +239,7 @@ int init_root(a1fs_superblock *sb, void *image, a1fs_blk_t *data_bitmap)
 
 	// Init the inode for the root directory
     a1fs_inode *rd_inode = (void *)(image + sb->first_inode * A1FS_BLOCK_SIZE);
-    rd_inode->mode = 'd';
+    rd_inode->mode = S_IFDIR;
     clock_gettime(CLOCK_REALTIME, &(rd_inode->mtime));
     rd_inode->size = 0;
     rd_inode->links = 0;
