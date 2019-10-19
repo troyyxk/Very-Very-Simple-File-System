@@ -17,7 +17,6 @@
 
 
 int main(int argc, char **argv) {
-{
     if (argc != 2)
     {
         fprintf(stderr, "Usage: %s <image file name>\n", argv[0]);
@@ -39,10 +38,9 @@ int main(int argc, char **argv) {
     }
 
     // Test using the current path
-    char *curr_path = ".";
+    char *path = ".";
 
     // IMPLEMENTATION
-    (void)fs;
     char cpy_path[(int)strlen(path)+1];
     strcpy(cpy_path, path);
     char *delim = "/";
@@ -53,7 +51,6 @@ int main(int argc, char **argv) {
     int cur_fix_index = 1;
 
     // Loop through the tokens on the path to find the location we are interested in
-    void *image = fs->image;
     a1fs_superblock *sb = (void *)image;
     a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
     a1fs_inode *cur = first_inode;
@@ -65,7 +62,7 @@ int main(int argc, char **argv) {
         // not a directory
         if (!(cur->mode & S_IFDIR))
         {
-            return -ENOTDIR;
+            return -1;
         }
         cur_fix_index++;
 
@@ -86,8 +83,13 @@ int main(int argc, char **argv) {
         a1fs_dentry *entries = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
         for (int i = 0; i < cur->dentry_count; i++) {
 //            filler(buf, entries[i].name, NULL, 0);
-            printf("%s\n", entries[i].name);
+            printf("Current entry:\n");
+	    printf("name: %s\n", entries[i].name);
+            printf("curfix: %s\n", curfix);
+            printf("cur_i: %d/%d\n\n", i, cur->dentry_count);
         }
+
+        curfix = strtok(NULL, delim);
     }
 
 
