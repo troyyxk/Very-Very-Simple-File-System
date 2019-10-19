@@ -83,8 +83,13 @@ int main(int argc, char **argv) {
         a1fs_dentry *entries = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
         for (int i = 0; i < cur->dentry_count; i++) {
 //            filler(buf, entries[i].name, NULL, 0);
-            printf("%s\n", entries[i].name);
+            printf("Current entry:\n");
+	    printf("name: %s\n", entries[i].name);
+            printf("curfix: %s\n", curfix);
+            printf("cur_i: %d/%d\n\n", i, cur->dentry_count);
         }
+
+        curfix = strtok(NULL, delim);
     }
 
 
