@@ -428,8 +428,8 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     }
 
 
-        // Success
-        return 0;
+    // Success
+    return 0;
 
 //	return -ENOSYS;
 }
