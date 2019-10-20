@@ -495,6 +495,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	a1fs_extent *extent;
 	a1fs_dentry *dentry;
 	a1fs_dentry *first_dentry;
+	// int first_while = 
 
 	int cur_inode;
 
@@ -515,6 +516,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 		int flag = 1;
 		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
 		first_dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+		dentry = first_dentry;
 
 		// not a directory and not the last one.
 		if (fix_count == cur_fix_index)
@@ -629,6 +631,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 
 	a1fs_dentry *parent_entry = (void *)self_entry + 1*sizeof(a1fs_dentry);
 	parent_entry->ino = cur_inode;
+	printf("parent_entry->ino: %d\n", parent_entry->ino);
 	strcpy(parent_entry->name, "..");
 
     // printf("\n");

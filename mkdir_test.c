@@ -117,7 +117,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    char *path = "/test_dir/text_sub1";
+    char *path = "/test";
 
     // a1fs_superblock *sb = (a1fs_superblock *)(image);
 
@@ -146,6 +146,7 @@ int main(int argc, char **argv)
 	{
 		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
 		first_dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+		dentry = first_dentry;
 		// cur = pioneer;
         printf("Enter the while loop with curfix: %s\n", curfix);
 		printf("cur_fix_index: %d\n", cur_fix_index);
