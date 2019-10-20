@@ -1729,26 +1729,78 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 
     while (curfix != NULL) {
         // not a directory
-        if (!(cur->mode & S_IFDIR))
-        {
+        if (!(cur->mode & S_IFDIR)) {
             return -ENOTDIR;
         }
         cur_fix_index++;
 
-        extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
-        dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
+        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
 
-        for (int i = 0; i < cur->dentry_count; cur++)
-        {
-            dentry = (void *)dentry + i * sizeof(a1fs_dentry);
-            if (strcmp(dentry->name, curfix) == 0)
-            { // directory/file is found
-                cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);
+        for (int i = 0; i < cur->dentry_count; cur++) {
+            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
+            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
+                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
                 break;
             }
         }
+    }
 
-        // Now cur should be pointing to the file we are reading
+    // Now cur should be pointing to the file we are reading
+    a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+    unsigned int extent_count = cur->ext_count;
+    unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
+
+    // If the offset is already after the end of the file, return 0 instantly.
+    if (offset > cur->size) { return 0; }
+    // Otherwise, start to loop through the file and load the buffer
+    unsigned int byte_filled = 0;
+    unsigned char *cur_location;
+    unsigned int passed_offset = 0;
+
+    for (unsigned int i = 0; i < extent_count; i++) {
+        unsigned int cur_extent_size = file_extent[i].count * A1FS_BLOCK_SIZE;
+        unsigned int cur_extent_processed_size = 0;
+
+        // Update the current location to the start of the current extent
+        cur_location = (void *)image + file_extent[i].start * A1FS_BLOCK_SIZE;
+
+        while (passed_offset < offset) {
+            // Loop through the portion skipped by the offset
+            unsigned int remaining_offset = offset - passed_offset;
+            unsigned int num_bytes_to_pass = remaining_offset < cur_extent_size ? remaining_offset : cur_extent_size;
+            cur_location += num_bytes_to_pass;
+            passed_offset += num_bytes_to_pass;
+            cur_extent_processed_size += num_bytes_to_pass;
+        }
+
+        // Load contents to the buffer
+        unsigned int remaining_file_size = cur->size - offset - byte_filled;
+        unsigned int remaining_extent_size = cur_extent_size - cur_extent_processed_size;
+        unsigned int remaining_buffer_size = size - byte_filled;
+
+        if (remaining_buffer_size <= remaining_extent_size && remaining_buffer_size <= remaining_file_size) {
+            // Reading to full buffer capacity
+            memcpy(buf + byte_filled, cur_location, remaining_buffer_size);
+            byte_filled += remaining_buffer_size;
+            break;
+        }
+        else if (remaining_extent_size < remaining_buffer_size && remaining_buffer_size <= remaining_file_size) {
+            // Reading only the portion of file within the extent;
+            // will need to continue to next extent
+            memcpy(buf + byte_filled, cur_location, remaining_extent_size);
+            byte_filled += remaining_extent_size;
+            // No need to handle other counters since this iteration will end here
+        }
+        else {
+            // Reading to the end of file
+            memcpy(buf + byte_filled, cur_location, remaining_file_size);
+            byte_filled += remaining_file_size;
+            break;
+        }
+    }
+
+    return byte_filled;
 }
 
 /**
