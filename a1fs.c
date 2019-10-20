@@ -407,6 +407,7 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     a1fs_dentry *dentry;
 
     while (curfix != NULL) {
+        printf("Current curfix: %s", curfix);
         // not a directory
         if (!(cur->mode & S_IFDIR))
         {
@@ -426,6 +427,8 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                 break;
             }
         }
+
+        curfix = strtok(NULL, delim);
 
     }
 
