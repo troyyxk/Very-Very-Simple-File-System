@@ -1893,7 +1893,6 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
     unsigned int byte_filled = 0;
     unsigned char *cur_location;
     unsigned int passed_offset = 0;
-    unsigned int remaining_file_size = cur->size;
 
     for (unsigned int i = 0; i < extent_count; i++) {
         unsigned int cur_extent_size = file_extent[i].count * A1FS_BLOCK_SIZE;
@@ -1912,7 +1911,7 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
         }
 
         // Load the current location with contents in the buffer
-        remaining_file_size = cur->size - offset - byte_filled;
+        unsigned int remaining_file_size = cur->size - offset - byte_filled;
         unsigned int remaining_extent_size = cur_extent_size - cur_extent_processed_size;
         unsigned int remaining_buffer_size = size - byte_filled;
 
@@ -1930,12 +1929,7 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
             remaining_file_size -= remaining_extent_size;
             // No need to handle other counters since this iteration will end here
         }
-        
-    }
 
-    if (remaining_file_size == 1) {
-        // End of file has been reached
-        *cur_location = EOF;
     }
 
     return byte_filled;
