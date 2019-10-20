@@ -815,11 +815,17 @@ static int a1fs_rmdir(const char *path)
 	// modify dentry so it is organized properly
 	a1fs_dentry *modify_entry = target_entry;
 	a1fs_dentry *remain_entry;
-	for (int i  = target_entry_index+1; i < cur->ext_count; i++){
+	printf("target_entry_index: %d, cur->dentry_count: %d\n", target_entry_index, cur->dentry_count);
+	for (int i  = target_entry_index+1; i < cur->dentry_count; i++){
+		printf("for loop: %d\n", i);
 		remain_entry = (void *)first_parent_entry + i*sizeof(a1fs_dentry);
+		printf("remain_entry->ino: %d\n", remain_entry->ino);
+		printf("remain_entry->name: %s\n", remain_entry->name);
 		modify_entry->ino = remain_entry->ino;
 		strcpy(modify_entry->name, remain_entry->name);
 		modify_entry = remain_entry;
+		printf("remain_entry->ino: %d\n", modify_entry->ino);
+		printf("remain_entry->name: %s\n", modify_entry->name);
 	}
 
 	// modify inode dentry_count
@@ -1182,19 +1188,28 @@ static int a1fs_unlink(const char *path)
 	printf("Data Extent bitmap to be set off: %ld\n", target_inode->ext_block);
 	setBitOff(data_bitmap, (uint32_t)(target_inode->ext_block - sb->first_data));
 
+	printf("gate1\n");
 	// delete inode
 	// delete from inode bitmap
 	a1fs_blk_t *inode_bitmap = (void *)image + sb->first_ib*A1FS_BLOCK_SIZE;
 	setBitOff(inode_bitmap, (uint32_t)target_entry->ino);
 
+	printf("gate2\n");
+
 	// modify dentry so it is organized properly
 	a1fs_dentry *modify_entry = target_entry;
 	a1fs_dentry *remain_entry;
-	for (int i  = target_entry_index+1; i < cur->ext_count; i++){
+	printf("target_entry_index: %d, cur->ext_count: %d\n", target_entry_index, cur->dentry_count);
+	for (int i  = target_entry_index+1; i < cur->dentry_count; i++){
+		printf("for loop: %d\n", i);
 		remain_entry = (void *)first_parent_entry + i*sizeof(a1fs_dentry);
+		printf("remain_entry->ino: %d\n", remain_entry->ino);
+		printf("remain_entry->name: %s\n", remain_entry->name);
 		modify_entry->ino = remain_entry->ino;
 		strcpy(modify_entry->name, remain_entry->name);
 		modify_entry = remain_entry;
+		printf("remain_entry->ino: %d\n", modify_entry->ino);
+		printf("remain_entry->name: %s\n", modify_entry->name);
 	}
 
 	// modify inode dentry_count
