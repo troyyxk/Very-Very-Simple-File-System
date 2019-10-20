@@ -758,27 +758,30 @@ static int a1fs_rmdir(const char *path)
 	a1fs_dentry *target_entry;
 	int target_entry_index;
 	int flag2 = 1;
-	printf("Before entering the for loop, curfix: %s, cur->ext_count: %d\n", curfix, cur->ext_count);
+	printf("Before entering the for loop, curfix: %s, cur->dentry_count: %d\n", curfix, cur->dentry_count);
 	for (int i = 0; i < cur->dentry_count; i++){
 		printf("Enter for loop.\n");
 		printf("Loop invariant (i): %d\n", i);
 		target_entry = (void *)first_parent_entry + i*sizeof(a1fs_dentry);
 		printf("target_entry->name: %s\n", target_entry->name);
 
+		printf("dentry->name: %s, curfix: %s\n",target_entry->name, curfix);
 		if (strcmp(target_entry->name, curfix) == 0){
-			printf("The inode for the directory to be deleted is %d.", target_entry->ino);
+			printf("The inode for the directory to be deleted is %d.\n", target_entry->ino);
 			target_entry_index = i;
 			flag2 = 0;
 			break;
 		}
 	}
+	printf("Exit for loop.\n");
 
 	if(flag2){  // The direcotory does not exist
 		printf("The directory does not exist.\n");
 		return 1;
 	}
 
-	a1fs_inode *target_inode = (void *)image + target_entry->ino * A1FS_BLOCK_SIZE;
+	a1fs_inode *target_inode = (void *)first_inode + target_entry->ino * sizeof(a1fs_inode);
+	// printf("Target inode: %d, target_inode->dentry_count\n", target_entry->ino);
 	if(target_inode->dentry_count > 2){  // it is not empty
 		printf("This directory is not empty.\n.");
 		return -ENOTEMPTY;
@@ -788,17 +791,21 @@ static int a1fs_rmdir(const char *path)
 	a1fs_extent *rm_ext_block;
 	a1fs_extent *first_ext_block = (void *)image + target_inode->ext_block * A1FS_BLOCK_SIZE;
 	int start_data;
+	printf("Before for loop the target_inode->ext_count: %d\n", target_inode->ext_count);
 	for (int i = 0; i < target_inode->ext_count; i++){
 		rm_ext_block = (void *)first_ext_block + i*sizeof(a1fs_extent);
 		start_data = rm_ext_block->start;
+		printf("Loop invatiant (i): %d, rm_ext_block->count: %d", i, rm_ext_block->count);
 		for (int j = 0; j< (int)(rm_ext_block->count); j++){
 			// delete data
-			setBitOff(data_bitmap, (uint32_t)(start_data + j));
+			printf("Data bitmap to be set off: %d\n, overall location: %d, sb->first_data: %d\n", start_data + j - sb->first_data, start_data + j, sb->first_data);
+			setBitOff(data_bitmap, (uint32_t)(start_data + j - sb->first_data));
 		}
 	}
 	
 	// delete extend block
-	setBitOff(data_bitmap, (uint32_t)target_inode->ext_block);
+	printf("Data Extent bitmap to be set off: %ld\n", target_inode->ext_block);
+	setBitOff(data_bitmap, (uint32_t)(target_inode->ext_block - sb->first_data));
 
 	// delete inode
 	// delete from inode bitmap
