@@ -164,7 +164,7 @@ int main(int argc, char **argv)
 		// printf("dentry->ino: %d", dentry->ino);
 		// printf("Before check if the last prefix. fix_count == %d, cur_fix_index == %d.\n", fix_count, cur_fix_index);
 
-		cur->mode = S_IFDIR;
+		// cur->mode = S_IFDIR;
 		if ((!(cur->mode & S_IFDIR)))
 		{
             fprintf(stderr, "Not a directory and not the last one.\n");
