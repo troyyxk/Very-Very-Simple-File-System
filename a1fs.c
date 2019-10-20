@@ -596,6 +596,8 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 	a1fs_inode *new_inode = (void *)inode_block + new_inode_addr*sizeof(a1fs_inode);
 	new_inode->links=2;
 	new_inode->mode=S_IFDIR;
+	// new_inode->mode=mode;
+	
 	clock_gettime(CLOCK_REALTIME, &(new_inode->mtime));
 	// new_inode->size=NULL;
 	new_inode->dentry_count=2;
@@ -930,11 +932,80 @@ static int a1fs_utimens(const char *path, const struct timespec tv[2])
 {
 	fs_ctx *fs = get_fs();
 
-	//TODO
-	(void)path;
-	(void)tv;
+	// IMPLEMENT
 	(void)fs;
-	return -ENOSYS;
+	(void)tv;
+	char cpy_path[(int)strlen(path)+1];
+	strcpy(cpy_path, path);
+	char *delim = "/";
+	char *curfix = strtok(cpy_path, delim);
+
+	// clarify the confussion of treating the last one as none directory and return error
+	int fix_count = num_entry_name(path);
+	int cur_fix_index = 1;
+
+	// loop through direcotries
+	void *image = fs->image;
+	a1fs_superblock *sb = (void *)image;
+	a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
+	// a1fs_inode *pioneer = first_inode;
+	a1fs_inode *cur = first_inode;
+
+	a1fs_extent *extent;
+	a1fs_dentry *first_dentry;
+	a1fs_dentry *dentry;
+
+	// // more pioneer than pioneer
+	// a1fs_inode *visioner;
+
+	// if (curfix == null){  // no other prefix, the root directory
+	// 	pioneer = null;
+	// } else{
+	// 	visioner =
+	// }
+	while (curfix != NULL)
+	{
+		// cur = pioneer;
+
+		// not a directory and not the last one.
+		if ((!(cur->mode & S_IFDIR)) && fix_count != cur_fix_index)
+		{
+			return -ENOTDIR;
+		}
+		cur_fix_index++;
+		// indicator for whether the directory is found, 1 for ont found and 0 for found
+		int flag = 1;
+		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+
+		first_dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+		for (int i = 0; i < cur->dentry_count; i++)
+		{
+            printf("Enter the for loop with i == %d\n", i);
+			dentry = (void *)first_dentry + i * sizeof(a1fs_dentry);
+            printf("Debtry Name: %s\n", dentry->name);
+			if (strcmp(dentry->name, curfix) == 0)
+			{ // directory/file is found
+				cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);
+				flag = 0;
+				break;
+			}
+		}
+
+		printf("Exit for loop.\n");
+
+		if (flag)
+		{ // does not exist
+            fprintf(stderr, "Does not exist.\n");
+			return -ENOENT;
+		}
+
+		curfix = strtok(NULL, delim);
+	}
+
+	cur->mtime = tv[1];
+
+
+	return 0;
 }
 
 /**
