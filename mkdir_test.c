@@ -117,7 +117,7 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    char *path = "/test_dir";
+    char *path = "/test_dir/text_sub1";
 
     // a1fs_superblock *sb = (a1fs_superblock *)(image);
 
@@ -137,6 +137,7 @@ int main(int argc, char **argv)
 
 	a1fs_extent *extent;
 	a1fs_dentry *dentry;
+	a1fs_dentry *first_dentry;
 
 	int cur_inode;
 
@@ -144,14 +145,12 @@ int main(int argc, char **argv)
 	while (curfix != NULL)
 	{
 		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
-		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+		first_dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
 		// cur = pioneer;
         printf("Enter the while loop with curfix: %s\n", curfix);
 		printf("cur_fix_index: %d\n", cur_fix_index);
 
 
-		printf("dentry->ino: %d", dentry->ino);
-		printf("Before check if the last prefix. fix_count == %d, cur_fix_index == %d.\n", fix_count, cur_fix_index);
 		// not a directory and not the last one.
 		if (fix_count == cur_fix_index)
 		{
@@ -161,6 +160,8 @@ int main(int argc, char **argv)
 			/** At this point, cur is the inode of the parent directory and curfix is the name of the new directory to be added. */
 		}
 		cur_fix_index++;
+		// printf("dentry->ino: %d", dentry->ino);
+		// printf("Before check if the last prefix. fix_count == %d, cur_fix_index == %d.\n", fix_count, cur_fix_index);
 
 		cur->mode = S_IFDIR;
 		if ((!(cur->mode & S_IFDIR)))
@@ -175,7 +176,8 @@ int main(int argc, char **argv)
 		{
 			// printf();
             printf("Enter the for loop with i == %d\n", i);
-			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
+			dentry = (void *)first_dentry + i * sizeof(a1fs_dentry);
+            printf("Dentry Inode : %d, Debtry Name: %s\n", dentry->ino, dentry->name);
 			if (strcmp(dentry->name, curfix) == 0)
 			{ // directory/file is found
 				cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);
