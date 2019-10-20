@@ -595,7 +595,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
     void *inode_block = (void *)(image + sb->first_inode * A1FS_BLOCK_SIZE);
 	a1fs_inode *new_inode = (void *)inode_block + new_inode_addr*sizeof(a1fs_inode);
 	new_inode->links=2;
-	new_inode->mode=S_IFDIR;
+	new_inode->mode=S_IFDIR | mode;
 	// new_inode->mode=mode;
 	
 	clock_gettime(CLOCK_REALTIME, &(new_inode->mtime));
@@ -982,7 +982,7 @@ static int a1fs_create(const char *path, mode_t mode, struct fuse_file_info *fi)
     void *inode_block = (void *)(image + sb->first_inode * A1FS_BLOCK_SIZE);
 	a1fs_inode *new_inode = (void *)inode_block + new_inode_addr*sizeof(a1fs_inode);
 	new_inode->links=2;
-	new_inode->mode=S_IFREG;
+	new_inode->mode=S_IFREG | mode;
 	clock_gettime(CLOCK_REALTIME, &(new_inode->mtime));
 	// new_inode->size=NULL;
 	new_inode->dentry_count=2;
