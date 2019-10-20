@@ -1828,12 +1828,117 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
 	fs_ctx *fs = get_fs();
 
 	//TODO
-	(void)path;
-	(void)buf;
-	(void)size;
-	(void)offset;
-	(void)fs;
-	return -ENOSYS;
+//	(void)path;
+//	(void)buf;
+//	(void)size;
+//	(void)offset;
+//	(void)fs;
+
+    // Follow the path to find the file
+    char cpy_path[(int)strlen(path)+1];
+    strcpy(cpy_path, path);
+    char *delim = "/";
+    char *curfix = strtok(cpy_path, delim);
+
+    // clarify the confussion of treating the last one as none directory and return error
+    // int fix_count = num_entry_name(path);
+    int cur_fix_index = 1;
+
+    // Loop through the tokens on the path to find the location we are interested in
+    void *image = fs->image;
+    a1fs_superblock *sb = (void *)image;
+    a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
+    a1fs_inode *cur = first_inode;
+
+    a1fs_extent *extent;
+    a1fs_dentry *dentry;
+
+    while (curfix != NULL) {
+        // not a directory
+        if (!(cur->mode & S_IFDIR)) {
+            return -ENOTDIR;
+        }
+        cur_fix_index++;
+
+        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
+        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
+
+        for (int i = 0; i < cur->dentry_count; cur++) {
+            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
+            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
+                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
+                break;
+            }
+        }
+    }
+
+    // Now cur should be pointing to the file we are reading
+    a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+    unsigned int extent_count = cur->ext_count;
+    unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
+
+    // If more space is needed in the file, call truncate to save more space for it
+    if (offset + size > cur->size) {
+        unsigned int original_size = cur->size;
+        if (int err = a1fs_truncate(path, offset + size) != 0) { return err; }
+        if (offset > original_size - 1) {
+            // An unattended hole occurred; fill it with all 0's
+            for (unsigned i = original_size - 1; i < offset; i++) {
+                file_start[i] = 0;
+            }
+        }
+    }
+
+    // Start to loop through the file and load the file with contents in the buffer
+    unsigned int byte_filled = 0;
+    unsigned char *cur_location;
+    unsigned int passed_offset = 0;
+    unsigned int remaining_file_size = cur->size;
+
+    for (unsigned int i = 0; i < extent_count; i++) {
+        unsigned int cur_extent_size = file_extent[i].count * A1FS_BLOCK_SIZE;
+        unsigned int cur_extent_processed_size = 0;
+
+        // Update the current location to the start of the current extent
+        cur_location = (void *)image + file_extent[i].start * A1FS_BLOCK_SIZE;
+
+        while (passed_offset < offset) {
+            // Loop through the portion skipped by the offset
+            unsigned int remaining_offset = offset - passed_offset;
+            unsigned int num_bytes_to_pass = remaining_offset < cur_extent_size ? remaining_offset : cur_extent_size;
+            cur_location += num_bytes_to_pass;
+            passed_offset += num_bytes_to_pass;
+            cur_extent_processed_size += num_bytes_to_pass;
+        }
+
+        // Load the current location with contents in the buffer
+        remaining_file_size = cur->size - offset - byte_filled;
+        unsigned int remaining_extent_size = cur_extent_size - cur_extent_processed_size;
+        unsigned int remaining_buffer_size = size - byte_filled;
+
+        if (remaining_buffer_size <= remaining_extent_size) {
+            // Loading all remaining contents in buffer to the location
+            memcpy(cur_location, buf + byte_filled, remaining_buffer_size);
+            cur_location += remaining_buffer_size;
+            byte_filled += remaining_buffer_size;
+            remaining_file_size -= remaining_buffer_size;
+            break;
+        } else {
+            memcpy(cur_location, buf + byte_filled, remaining_extent_size);
+            cur_location += remaining_extent_size;
+            byte_filled += remaining_extent_size;
+            remaining_file_size -= remaining_extent_size;
+            // No need to handle other counters since this iteration will end here
+        }
+        
+    }
+
+    if (remaining_file_size == 1) {
+        // End of file has been reached
+        *cur_location = EOF;
+    }
+
+    return byte_filled;
 }
 
 static struct fuse_operations a1fs_ops = {
