@@ -661,12 +661,164 @@ static int a1fs_mkdir(const char *path, mode_t mode)
  */
 static int a1fs_rmdir(const char *path)
 {
+	printf("Start a1fs_mkdir with path %s.\n", path);
 	fs_ctx *fs = get_fs();
 
-	//TODO
+	// IMPLEMENTED
 	(void)path;
 	(void)fs;
-	return -ENOSYS;
+
+	// IMPLEMENT
+	(void)fs;
+    char cpy_path[(int)strlen(path)+1];
+	strcpy(cpy_path, path);
+	char *delim = "/";
+	char *curfix = strtok(cpy_path, delim);
+
+	// clarify the confussion of treating the last one as none directory and return error
+	int fix_count = num_entry_name(path);
+	int cur_fix_index = 1;
+
+	// loop through direcotries
+	void *image = fs->image;
+	a1fs_superblock *sb = (void *)image;
+	a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
+	a1fs_inode *cur = first_inode;
+
+	a1fs_extent *extent;
+	a1fs_dentry *dentry;
+	a1fs_dentry *first_dentry;
+	// int first_while = 
+
+	// int cur_inode;
+
+	while (curfix != NULL)
+	{
+		// cur = pioneer;
+        printf("Enter the while loop with curfix: %s\n", curfix);
+
+		// cur->mode = S_IFDIR;
+
+		if ((!(cur->mode & S_IFDIR)))
+		{
+            fprintf(stderr, "Not a directory and not the last one.\n");
+			return -ENOTDIR;
+		}
+        printf("cur->dentry_count: %d\n", cur->dentry_count);
+		// indicator for whether the directory is found, 1 for ont found and 0 for found
+		int flag = 1;
+		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+		first_dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+		dentry = first_dentry;
+
+		// not a directory and not the last one.
+		if (fix_count == cur_fix_index)
+		{
+			// cur_inode = dentry->ino;
+			break;
+			/** At this point, cur is the inode of the parent directory and curfix is the name of the new directory to be added. */
+		}
+		cur_fix_index++;
+		// printf("dentry->ino: %d", dentry->ino);
+		// printf("Before check if the last prefix. fix_count == %d, cur_fix_index == %d.\n", fix_count, cur_fix_index);
+
+		for (int i = 0; i < cur->dentry_count; i++)
+		{
+            printf("Enter the for loop with i == %d\n", i);
+			dentry = (void *)first_dentry + i * sizeof(a1fs_dentry);
+            printf("Dentry Inode : %d, Debtry Name: %s\n", dentry->ino, dentry->name);
+			if (strcmp(dentry->name, curfix) == 0)
+			{ // directory/file is found
+				cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);
+				flag = 0;
+				break;
+			}
+		}
+		printf("Exit for loop.\n");
+
+		if (flag)
+		{ // does not exist
+            fprintf(stderr, "Does not exist.\n");
+			return -ENOENT;
+		}
+
+		curfix = strtok(NULL, delim);
+	}
+
+	if (curfix == NULL){
+		fprintf(stderr, "curfis == null in mkdir, something wrong in the loop.\n");
+		return 1;
+	}
+
+	/** At this point, cur is the inode of the parent directory and curfix is the name of the directory to be deleted. */
+	
+	a1fs_extent *cur_ext_block = (void *)image + cur->ext_block*A1FS_BLOCK_SIZE;
+
+	a1fs_dentry *first_parent_entry = (void *)image + cur_ext_block->start*A1FS_BLOCK_SIZE;
+	a1fs_dentry *target_entry;
+	int target_entry_index;
+	int flag2 = 1;
+	printf("Before entering the for loop, curfix: %s, cur->ext_count: %d\n", curfix, cur->ext_count);
+	for (int i = 0; i < cur->dentry_count; i++){
+		printf("Enter for loop.\n");
+		printf("Loop invariant (i): %d\n", i);
+		target_entry = (void *)first_parent_entry + i*sizeof(a1fs_dentry);
+		printf("target_entry->name: %s\n", target_entry->name);
+
+		if (strcmp(target_entry->name, curfix) == 0){
+			printf("The inode for the directory to be deleted is %d.", target_entry->ino);
+			target_entry_index = i;
+			flag2 = 0;
+			break;
+		}
+	}
+
+	if(flag2){  // The direcotory does not exist
+		printf("The directory does not exist.\n");
+		return 1;
+	}
+
+	a1fs_inode *target_inode = (void *)image + target_entry->ino * A1FS_BLOCK_SIZE;
+	if(target_inode->dentry_count > 2){  // it is not empty
+		printf("This directory is not empty.\n.");
+		return -ENOTEMPTY;
+	}
+
+	a1fs_blk_t *data_bitmap = (void *)image + sb->first_db*A1FS_BLOCK_SIZE;
+	a1fs_extent *rm_ext_block;
+	a1fs_extent *first_ext_block = (void *)image + target_inode->ext_block * A1FS_BLOCK_SIZE;
+	int start_data;
+	for (int i = 0; i < target_inode->ext_count; i++){
+		rm_ext_block = (void *)first_ext_block + i*sizeof(a1fs_extent);
+		start_data = rm_ext_block->start;
+		for (int j = 0; j< (int)(rm_ext_block->count); j++){
+			// delete data
+			setBitOff(data_bitmap, (uint32_t)(start_data + j));
+		}
+	}
+	
+	// delete extend block
+	setBitOff(data_bitmap, (uint32_t)target_inode->ext_block);
+
+	// delete inode
+	// delete from inode bitmap
+	a1fs_blk_t *inode_bitmap = (void *)image + sb->first_ib*A1FS_BLOCK_SIZE;
+	setBitOff(inode_bitmap, (uint32_t)target_entry->ino);
+
+	// modify dentry so it is organized properly
+	a1fs_dentry *modify_entry = target_entry;
+	a1fs_dentry *remain_entry;
+	for (int i  = target_entry_index+1; i < cur->ext_count; i++){
+		remain_entry = (void *)first_parent_entry + i*sizeof(a1fs_dentry);
+		modify_entry->ino = remain_entry->ino;
+		strcpy(modify_entry->name, remain_entry->name);
+		modify_entry = remain_entry;
+	}
+
+	// modify inode dentry_count
+	cur->dentry_count -= 1;
+	
+	return 0;
 }
 
 /**
