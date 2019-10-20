@@ -417,7 +417,7 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
 		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
 
-        for (int i = 0; i < cur->dentry_count; cur++)
+        for (int i = 0; i < cur->dentry_count; i++)
         {
             dentry = (void *)dentry + i * sizeof(a1fs_dentry);
             if (strcmp(dentry->name, curfix) == 0)
@@ -427,15 +427,15 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
             }
         }
 
-        // Now cur should be pointing to the directory we are reading
-        a1fs_dentry *entries = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
-        for (int i = 0; i < cur->dentry_count; i++) {
-            if (filler(buf, entries[i].name, NULL, 0) != 0) {
-                return -ENOMEM;
-            };
-        }
     }
 
+    // Now cur should be pointing to the directory we are reading
+    a1fs_dentry *entries = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+    for (int i = 0; i < cur->dentry_count; i++) {
+        if (filler(buf, entries[i].name, NULL, 0) != 0) {
+            return -ENOMEM;
+        };
+    }
 
     // Success
     return 0;
@@ -494,6 +494,7 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 
 	a1fs_extent *extent;
 	a1fs_dentry *dentry;
+	a1fs_dentry *first_dentry;
 
 	int cur_inode;
 
@@ -513,10 +514,8 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 		// indicator for whether the directory is found, 1 for ont found and 0 for found
 		int flag = 1;
 		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
-		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+		first_dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
 
-		printf("dentry->ino: %d", dentry->ino);
-		printf("Before check if the last prefix. fix_count == %d, cur_fix_index == %d.\n", fix_count, cur_fix_index);
 		// not a directory and not the last one.
 		if (fix_count == cur_fix_index)
 		{
@@ -525,11 +524,14 @@ static int a1fs_mkdir(const char *path, mode_t mode)
 			/** At this point, cur is the inode of the parent directory and curfix is the name of the new directory to be added. */
 		}
 		cur_fix_index++;
+		// printf("dentry->ino: %d", dentry->ino);
+		// printf("Before check if the last prefix. fix_count == %d, cur_fix_index == %d.\n", fix_count, cur_fix_index);
 
 		for (int i = 0; i < cur->dentry_count; i++)
 		{
             printf("Enter the for loop with i == %d\n", i);
-			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
+			dentry = (void *)first_dentry + i * sizeof(a1fs_dentry);
+            printf("Dentry Inode : %d, Debtry Name: %s\n", dentry->ino, dentry->name);
 			if (strcmp(dentry->name, curfix) == 0)
 			{ // directory/file is found
 				cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);
