@@ -1776,7 +1776,7 @@ static int a1fs_truncate(const char *path, off_t size)
     unsigned int last_block_used = A1FS_BLOCK_SIZE - last_block_remaining;
 
     // Store the end of file (aka last byte of the file)
-    a1fs_extent last_extent = file_extent[extent_count - 1]
+    a1fs_extent last_extent = file_extent[extent_count - 1];
     unsigned int last_block_index = last_extent.start + last_extent.count - 1;
     unsigned char *eof = (void *)image + last_block_index * A1FS_BLOCK_SIZE + last_block_used;
 
