@@ -1762,9 +1762,6 @@ static int a1fs_truncate(const char *path, off_t size)
     unsigned int extent_count = cur->ext_count;
 //    unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
 
-    // Store the end of file (aka last byte of the file)
-    unsigned char *eof = (void *)image + file_extent->start * A1FS_BLOCK_SIZE + cur->size - 1;
-
     // Find the usage of the last block
     unsigned int total_block_size = 0;
     for (unsigned int i = 0; i < extent_count; i++) {
@@ -1772,6 +1769,11 @@ static int a1fs_truncate(const char *path, off_t size)
     }
     unsigned int last_block_remaining = total_block_size - cur->size;
     unsigned int last_block_used = A1FS_BLOCK_SIZE - last_block_remaining;
+
+    // Store the end of file (aka last byte of the file)
+    a1fs_extent last_extent = file_extent[extent_count - 1]
+    unsigned int last_block_index = last_extent.start + last_extent.count - 1;
+    unsigned char *eof = (void *)image + last_block_index * A1FS_BLOCK_SIZE + last_block_used;
 
     // Store the address of the data block bitmap
     a1fs_blk_t *db_bitmap = (void *)image + sb->first_db * A1FS_BLOCK_SIZE;
@@ -1867,7 +1869,6 @@ static int a1fs_truncate(const char *path, off_t size)
             eof -= last_block_used;
 
             // Unregister the last block from the bitmap
-            a1fs_extent last_extent = file_extent[cur->ext_count - 1];
             unsigned int block_index = last_extent.start + last_extent.count;
             setBitOff(db_bitmap, block_index);
 
