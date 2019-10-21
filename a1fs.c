@@ -601,56 +601,34 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	char *delim = "/";
 	char *curfix = strtok(cpy_path, delim);
 
-	// clarify the confussion of treating the last one as none directory and return error
-	// int fix_count = num_entry_name(path);
-	int cur_fix_index = 1;
-
 	// Loop through the tokens on the path to find the location we are interested in
 	void *image = fs->image;
 	a1fs_superblock *sb = (void *)image;
 	a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
 	a1fs_inode *cur = first_inode;
 
-	a1fs_extent *extent;
-	a1fs_dentry *dentry;
-
-	while (curfix != NULL)
+	int cur_ino = find_inode_from_path(path);
+	if (cur_ino < 0)
 	{
-		// not a directory
-		if (!(cur->mode & S_IFDIR))
-		{
-			return -ENOTDIR;
-		}
-		cur_fix_index++;
-
-		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
-		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
-
-		for (int i = 0; i < cur->dentry_count; i++)
-		{
-			dentry = (void *)dentry + i * sizeof(a1fs_dentry);
-			if (strcmp(dentry->name, curfix) == 0)
-			{ // directory/file is found
-				cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);
-				break;
-			}
-		}
+		fprintf("Inode for the path not exist.\n");
+		return 1;
 	}
-
-	// Now cur should be pointing to the directory we are reading
-	a1fs_dentry *entries = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+	cur = (void *)first_inode + sizeof(a1fs_inode);
+	a1fs_extent *cur_extent = (void *)image + first_inode->ext_block * A1FS_BLOCK_SIZE;
+	filler(buf, ".", NULL, 0);
+	filler(buf, "..", NULL, 0);
+	a1fs_dentry *first_entry = (void *)image + cur_extent->start * A1FS_BLOCK_SIZE;
+	a1fs_dentry *cur_entry;
 	for (int i = 0; i < cur->dentry_count; i++)
 	{
-		if (filler(buf, entries[i].name, NULL, 0) != 0)
+		cur_entry = (void *)first_entry + i * sizeof(a1fs_dentry);
+		if (cur_entry->ino != 0)
 		{
-			return -ENOMEM;
-		};
+			filler(buf, cur_entry->name, NULL, 0);
+		}
 	}
 
-	// Success
 	return 0;
-
-	//	return -ENOSYS;
 }
 
 /**
