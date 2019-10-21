@@ -1802,6 +1802,7 @@ static int a1fs_truncate(const char *path, off_t size)
 
                 // Make use of the current longest chunk of free blocks
                 for (int i = 0; i < empty_trunk_length; i++) {
+                    // Fill the block with the contents
                     unsigned char *cur_block = (void *)extent_start_loc + i * A1FS_BLOCK_SIZE;
                     unsigned int num_byte_to_write =
                             (bytes_to_add <= A1FS_BLOCK_SIZE) ? bytes_to_add : A1FS_BLOCK_SIZE;
@@ -1810,6 +1811,7 @@ static int a1fs_truncate(const char *path, off_t size)
                         cur_block[j] = 0;
                     }
                     bytes_to_add -= num_byte_to_write;
+                    eof += num_byte_to_write;
 
                     // Register the block as used in the data bitmap
                     a1fs_blk_t *db_bitmap = (void *)image + sb->first_db * A1FS_BLOCK_SIZE;
