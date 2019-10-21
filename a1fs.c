@@ -1028,6 +1028,11 @@ static int a1fs_rmdir(const char *path)
 
 	// modify inode dentry_count
 	cur->dentry_count -= 1;
+	// increase the free_inode_count by 1
+	sb->free_inode_count += 1;
+
+	// increase free_dblock_count by2
+	sb->free_dblock_count += 2;
 
 	return 0;
 }
@@ -1370,6 +1375,7 @@ static int a1fs_unlink(const char *path)
 			// delete data
 			printf("Data bitmap to be set off: %d\n, overall location: %d, sb->first_data: %d\n", start_data + j - sb->first_data, start_data + j, sb->first_data);
 			setBitOff(data_bitmap, (uint32_t)(start_data + j - sb->first_data));
+			sb->free_dblock_count++;
 		}
 	}
 
@@ -1381,6 +1387,7 @@ static int a1fs_unlink(const char *path)
 	// delete from inode bitmap
 	a1fs_blk_t *inode_bitmap = (void *)image + sb->first_ib * A1FS_BLOCK_SIZE;
 	setBitOff(inode_bitmap, (uint32_t)target_entry->ino);
+	sb->free_dblock_count++;
 
 	// modify dentry so it is organized properly
 	a1fs_dentry *modify_entry = target_entry;
@@ -1401,6 +1408,9 @@ static int a1fs_unlink(const char *path)
 
 	// modify inode dentry_count
 	cur->dentry_count -= 1;
+
+	// increase free_inode_count by 1
+	sb->free_inode_count += 1;
 
 	return 0;
 }
