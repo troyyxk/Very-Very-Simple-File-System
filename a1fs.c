@@ -216,6 +216,7 @@ int find_free_from_bitmap(a1fs_blk_t *bitmap, int size)
  *                    0 if all blocks are taken
  */
  int find_max_free_chunk(a1fs_blk_t *bm_start, unsigned int bm_size, int *free_start) {
+     printf("Start search for max free chunk\n");
      int cur_max = 0;
      int cur_count = 0;
      int cur_end = 0;
@@ -233,8 +234,11 @@ int find_free_from_bitmap(a1fs_blk_t *bitmap, int size)
 
      if (cur_max > 0) {
          *free_start = cur_end - cur_max + 1;
+         printf("Final result: %d blocks starting from block %d\n", cur_max, *free_start);
+     } else {
+         printf("All blocks are taken\n");
      }
-
+aA
      return cur_max;
  }
 
@@ -1777,6 +1781,7 @@ static int a1fs_truncate(const char *path, off_t size)
     }
     unsigned int last_block_remaining = total_block_size - cur->size;
     unsigned int last_block_used = A1FS_BLOCK_SIZE - last_block_remaining;
+    printf("Last block usage: %d/4096\n", last_block_used);
 
     // Store the end of file (aka last byte of the file)
     a1fs_extent last_extent = file_extent[extent_count - 1];
@@ -1820,7 +1825,7 @@ static int a1fs_truncate(const char *path, off_t size)
                     sb->db_count,
                     new_extent_start
                     );
-            printf("New extent: %d blocks starting from block %d", empty_chunk_length, *new_extent_start);
+            printf("New extent: %d blocks starting from block %d\n", empty_chunk_length, *new_extent_start);
 
             while (empty_chunk_length != 0 && bytes_to_add > 0) {
                 // Store the location of the current longest trunk
