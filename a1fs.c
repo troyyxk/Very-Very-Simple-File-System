@@ -1799,6 +1799,10 @@ static int a1fs_truncate(const char *path, off_t size)
                 // Store the location of the current longest trunk
                 unsigned char *extent_start_loc =
                         (void *)image + (sb->first_db + *new_extent_start) * A1FS_BLOCK_SIZE;
+                // Make new extent on the file
+                cur->ext_count++;
+                file_extent[cur->ext_count - 1].start = *new_extent_start;
+                file_extent[cur->ext_count - 1].count = 0;
 
                 // Make use of the current longest chunk of free blocks
                 for (int i = 0; i < empty_trunk_length; i++) {
@@ -1816,6 +1820,9 @@ static int a1fs_truncate(const char *path, off_t size)
                     // Register the block as used in the data bitmap
                     a1fs_blk_t *db_bitmap = (void *)image + sb->first_db * A1FS_BLOCK_SIZE;
                     setBitOn(db_bitmap, *new_extent_start + i);
+
+                    // Register the block as a count in the extent
+                    file_extent[cur->ext_count - 1].count++;
 
                     // Break the loop if all bytes are added
                     if (bytes_to_add == 0) { break; }
