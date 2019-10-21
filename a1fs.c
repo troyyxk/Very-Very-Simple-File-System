@@ -372,7 +372,7 @@ static int a1fs_getattr(const char *path, struct stat *st)
 static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 						off_t offset, struct fuse_file_info *fi)
 {
-	printf("Start a1fs_readdir.\n");
+	printf("Start a1fs_readdir with path: %s.\n", path);
 	(void)offset; // unused
 	(void)fi;	 // unused
 	fs_ctx *fs = get_fs();
@@ -392,6 +392,7 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     strcpy(cpy_path, path);
     char *delim = "/";
     char *curfix = strtok(cpy_path, delim);
+    printf("Curfix obtained: %s\n", curfix);
 
     // clarify the confussion of treating the last one as none directory and return error
     // int fix_count = num_entry_name(path);
@@ -404,26 +405,29 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     a1fs_inode *cur = first_inode;
 
 	a1fs_extent *extent;
-    a1fs_dentry *dentry;
+	a1fs_dentry *first_dentry;
+    	a1fs_dentry *dentry;
 
     while (curfix != NULL) {
-        printf("Current curfix: %s", curfix);
+        printf("Current curfix: %s\n", curfix);
         // not a directory
         if (!(cur->mode & S_IFDIR))
         {
+	    printf("Not a directory\n");
             return -ENOTDIR;
         }
         cur_fix_index++;
 
 		extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
-		dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
+		first_dentry = (void *)image + extent->start * A1FS_BLOCK_SIZE;
 
         for (int i = 0; i < cur->dentry_count; i++)
         {
-            dentry = (void *)dentry + i * sizeof(a1fs_dentry);
+            dentry = (void *)first_dentry + i * sizeof(a1fs_dentry);
             if (strcmp(dentry->name, curfix) == 0)
             { // directory/file is found
                 cur = (void *)first_inode + dentry->ino * sizeof(a1fs_inode);
+		printf("Address found; name: %s\n", dentry->name);
                 break;
             }
         }
@@ -433,11 +437,13 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     }
 
     // Now cur should be pointing to the directory we are reading
-    a1fs_dentry *entries = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+    a1fs_dentry *first_entry = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+	a1fs_dentry *cur_entry;
     for (int i = 0; i < cur->dentry_count; i++) {
-        if (filler(buf, entries[i].name, NULL, 0) != 0) {
+	cur_entry = (void *)first_entry + i*sizeof(a1fs_dentry);
+        if (cur_entry->ino != 0 && filler(buf, cur_entry->name, NULL, 0) != 0) {
             return -ENOMEM;
-        };
+        }
     }
 
     // Success
