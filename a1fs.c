@@ -200,6 +200,40 @@ int find_free_from_bitmap(a1fs_blk_t *bitmap, int size)
 }
 
 /**
+ * Find the longest unused chunk of blocks in the data block bitmap starting
+ * at bm_start and has quantity bm_size, load it to the address free_start,
+ * and return the number of blocks in the trunk.
+ *
+ * @param bm_start    the address of the start of the bitmap
+ * @param bm_size     the size of the bitmap
+ * @param free_start  the address to store the index of the block starting the free trunk
+ * @return            the number of free blocks in the trunk;
+ *                    0 if all blocks are taken
+ */
+ int find_max_free_chunk(a1fs_blk_t *bm_start, unsigned int bm_size, int *free_start) {
+     int cur_max = 0;
+     int cur_count = 0;
+     int cur_end = 0;
+     for (unsigned int i = 0; i < bm_size; i++) {
+         if (checkBit((uint32_t *)bm_start, i) == 0) {
+             cur_count++;
+             if (cur_count > cur_max) {
+                 cur_max++;
+                 cur_end = i;
+             }
+         } else {
+             cur_count = 0;
+         }
+     }
+
+     if (cur_max > 0) {
+         *free_start = cur_end - cur_max + 1;
+     }
+
+     return cur_max;
+ }
+
+/**
  * Get a list of names of directory entries from a path, and fill them
  * into the address in the parameter
  *
@@ -1678,10 +1712,202 @@ static int a1fs_truncate(const char *path, off_t size)
 	fs_ctx *fs = get_fs();
 
 	//TODO
-	(void)path;
-	(void)size;
-	(void)fs;
-	return -ENOSYS;
+//	(void)path;
+//	(void)size;
+//	(void)fs;
+
+//    // Follow the path to find the file
+//    char cpy_path[(int)strlen(path)+1];
+//    strcpy(cpy_path, path);
+//    char *delim = "/";
+//    char *curfix = strtok(cpy_path, delim);
+//
+//    // clarify the confussion of treating the last one as none directory and return error
+//    // int fix_count = num_entry_name(path);
+//    int cur_fix_index = 1;
+
+    // Loop through the tokens on the path to find the location we are interested in
+    void *image = fs->image;
+    a1fs_superblock *sb = (void *)image;
+    a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
+//    a1fs_inode *cur = first_inode;
+//
+//    a1fs_extent *extent;
+//    a1fs_dentry *dentry;
+//
+//    while (curfix != NULL) {
+//        // not a directory
+//        if (!(cur->mode & S_IFDIR)) {
+//            return -ENOTDIR;
+//        }
+//        cur_fix_index++;
+//
+//        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
+//        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
+//
+//        for (int i = 0; i < cur->dentry_count; cur++) {
+//            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
+//            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
+//                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
+//                break;
+//            }
+//        }
+//    }
+    // Find the inode for file we are looking for
+    int inode_index = find_inode_from_path(path);
+    a1fs_inode *cur = (void *)first_inode + inode_index * sizeof(a1fs_inode);
+
+    // Now cur should be pointing to the file we are reading
+    a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+    unsigned int extent_count = cur->ext_count;
+//    unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
+
+    // Store the end of file (aka last byte of the file)
+    unsigned char *eof = (void *)image + file_extent->start * A1FS_BLOCK_SIZE + cur->size - 1;
+
+    // Find the usage of the last block
+    unsigned int total_block_size = 0;
+    for (unsigned int i = 0; i < extent_count; i++) {
+        total_block_size += file_extent[i].count * A1FS_BLOCK_SIZE;
+    }
+    unsigned int last_block_remaining = total_block_size - cur->size;
+    unsigned int last_block_used = A1FS_BLOCK_SIZE - last_block_remaining;
+
+    // Store the address of the data block bitmap
+    a1fs_blk_t *db_bitmap = (void *)image + sb->first_db * A1FS_BLOCK_SIZE;
+
+    if ((int)size > (int)cur->size) {
+        // The size of the file should expand to size
+        unsigned int bytes_to_add = size - cur->size;
+        if (bytes_to_add <= last_block_remaining) {
+            // Write within the current block
+            for (unsigned int j = 0; j < bytes_to_add; j++) {
+                // Make all bytes in the newly-appended area have value 0
+                eof[j + 1] = 0;
+            }
+            cur->size += bytes_to_add;
+            eof += bytes_to_add;
+        } else {
+            // Need new blocks for the file
+            // Fill the current block
+            for (unsigned int j = 0; j < last_block_remaining; j++) {
+                eof[j + 1] = 0;
+            }
+            cur->size += last_block_remaining;
+            bytes_to_add -= last_block_remaining;
+            eof += bytes_to_add;
+
+            // Find and allocate new extents
+            int *new_extent_start = malloc(sizeof(int));
+	    int empty_chunk_length;
+            empty_chunk_length = find_max_free_chunk(
+                    (void *)image + sb->first_db * A1FS_BLOCK_SIZE,
+                    sb->db_count,
+                    new_extent_start
+                    );
+            while (empty_chunk_length != 0 && bytes_to_add > 0) {
+                // Store the location of the current longest trunk
+                unsigned char *extent_start_loc =
+                        (void *)image + (sb->first_db + *new_extent_start) * A1FS_BLOCK_SIZE;
+                // Make new extent on the file
+                cur->ext_count++;
+                file_extent[cur->ext_count - 1].start = *new_extent_start;
+                file_extent[cur->ext_count - 1].count = 0;
+
+                // Make use of the current longest chunk of free blocks
+                for (int i = 0; i < empty_chunk_length; i++) {
+                    // Fill the block with the contents
+                    unsigned char *cur_block = (void *)extent_start_loc + i * A1FS_BLOCK_SIZE;
+                    unsigned int num_byte_to_write =
+                            (bytes_to_add <= A1FS_BLOCK_SIZE) ? bytes_to_add : A1FS_BLOCK_SIZE;
+                    // Write into the new block with all 0's
+                    for (unsigned j = 0; j < num_byte_to_write; j++) {
+                        cur_block[j] = 0;
+                    }
+                    bytes_to_add -= num_byte_to_write;
+                    eof += num_byte_to_write;
+
+                    // Register the block as used in the data bitmap
+                    setBitOn(db_bitmap, *new_extent_start + i);
+
+                    // Register the block as a count in the extent
+                    file_extent[cur->ext_count - 1].count++;
+
+                    // Break the loop if all bytes are added
+                    if (bytes_to_add == 0) { break; }
+
+		    // Find the next empty chunk for more contents
+		    empty_chunk_length = find_max_free_chunk(
+                            (void *)image + sb->first_db * A1FS_BLOCK_SIZE,
+                            sb->db_count,
+                            new_extent_start
+                            );
+                }
+
+		// Free the malloc-ed space
+		free(new_extent_start);
+            }
+
+            if (empty_chunk_length == 0) {
+                return -ENOSPC;
+            }
+        }
+    } else {
+        // The size of the file should shrink to size
+        unsigned int bytes_to_remove = cur->size - size;
+        if (bytes_to_remove <= last_block_used) {
+            // Remove contents within the last block
+            cur->size -= bytes_to_remove;
+            eof -= bytes_to_remove;
+        } else {
+            // Need to trace blocks and remove them
+            // Remove all contents from the current block
+            cur->size -= last_block_used;
+            bytes_to_remove -= last_block_used;
+            eof -= last_block_used;
+
+            // Unregister the last block from the bitmap
+            a1fs_extent last_extent = file_extent[cur->ext_count - 1];
+            unsigned int block_index = last_extent.start + last_extent.count;
+            setBitOff(db_bitmap, block_index);
+
+            // Unregister the last block from the extent
+            file_extent[cur->ext_count - 1].count--;
+            // If the extent has no more blocks, unregister it from the inode
+            cur->ext_count--;
+
+            // Continue to free other blocks ahead of the blocks we have just freed
+            while (bytes_to_remove > 0) {
+                last_extent = file_extent[cur->ext_count - 1];
+                for (int i = last_extent.count - 1; i >= 0; i--) {
+                    // Remove needed contents in the loop
+                    unsigned int num_bytes_to_remove =
+                            (bytes_to_remove <= A1FS_BLOCK_SIZE) ? bytes_to_remove : A1FS_BLOCK_SIZE;
+                    cur->size -= num_bytes_to_remove;
+                    bytes_to_remove -= num_bytes_to_remove;
+                    eof -= num_bytes_to_remove;
+
+                    // If all contents are removed, unregister the block
+                    if (num_bytes_to_remove == A1FS_BLOCK_SIZE) {
+                        block_index = last_extent.start + last_extent.count;
+                        setBitOff(db_bitmap, block_index);
+                        file_extent[cur->ext_count - 1].count--;
+                    }
+
+                    // If all needed bytes are removed, break the loop
+                    if (bytes_to_remove == 0) { break; }
+                }
+
+                // If all blocks in the extent has been removed, unregister the extent
+                if (file_extent[cur->ext_count - 1].count == 0) {
+                    cur->ext_count--;
+                }
+            }
+        }
+    }
+
+    // The function has succeeded if it reaches this point
+    return 0;
 }
 
 /**
@@ -1710,12 +1936,107 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 	fs_ctx *fs = get_fs();
 
 	//TODO
-	(void)path;
-	(void)buf;
-	(void)size;
-	(void)offset;
-	(void)fs;
-	return -ENOSYS;
+//	(void)path;
+//	(void)buf;
+//	(void)size;
+//	(void)offset;
+//	(void)fs;
+
+//	// Follow the path to find the file
+//    char cpy_path[(int)strlen(path)+1];
+//    strcpy(cpy_path, path);
+//    char *delim = "/";
+//    char *curfix = strtok(cpy_path, delim);
+//
+//    // clarify the confussion of treating the last one as none directory and return error
+//    // int fix_count = num_entry_name(path);
+//    int cur_fix_index = 1;
+//
+    // Loop through the tokens on the path to find the location we are interested in
+    void *image = fs->image;
+    a1fs_superblock *sb = (void *)image;
+    a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
+//    a1fs_inode *cur = first_inode;
+//
+//    a1fs_extent *extent;
+//    a1fs_dentry *dentry;
+//
+//    while (curfix != NULL) {
+//        // not a directory
+//        if (!(cur->mode & S_IFDIR)) {
+//            return -ENOTDIR;
+//        }
+//        cur_fix_index++;
+//
+//        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
+//        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
+//
+//        for (int i = 0; i < cur->dentry_count; cur++) {
+//            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
+//            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
+//                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
+//                break;
+//            }
+//        }
+//    }
+    // Find the inode for file we are looking for
+    int inode_index = find_inode_from_path(path);
+    a1fs_inode *cur = (void *)first_inode + inode_index * sizeof(a1fs_inode);
+
+    // Now cur should be pointing to the file we are reading
+    a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+    unsigned int extent_count = cur->ext_count;
+
+    // If the offset is already after the end of the file, return 0 instantly.
+    if ((int)offset > (int)cur->size) { return 0; }
+    // Otherwise, start to loop through the file and load the buffer
+    unsigned int byte_filled = 0;
+    unsigned char *cur_location;
+    unsigned int passed_offset = 0;
+
+    for (unsigned int i = 0; i < extent_count; i++) {
+        unsigned int cur_extent_size = file_extent[i].count * A1FS_BLOCK_SIZE;
+        unsigned int cur_extent_processed_size = 0;
+
+        // Update the current location to the start of the current extent
+        cur_location = (void *)image + file_extent[i].start * A1FS_BLOCK_SIZE;
+
+        while (passed_offset < offset) {
+            // Loop through the portion skipped by the offset
+            unsigned int remaining_offset = offset - passed_offset;
+            unsigned int num_bytes_to_pass = remaining_offset < cur_extent_size ? remaining_offset : cur_extent_size;
+            cur_location += num_bytes_to_pass;
+            passed_offset += num_bytes_to_pass;
+            cur_extent_processed_size += num_bytes_to_pass;
+        }
+
+        // Load contents to the buffer
+        unsigned int remaining_file_size = cur->size - offset - byte_filled;
+        unsigned int remaining_extent_size = cur_extent_size - cur_extent_processed_size;
+        unsigned int remaining_buffer_size = size - byte_filled;
+
+        if (remaining_buffer_size <= remaining_extent_size && remaining_buffer_size <= remaining_file_size) {
+            // Reading to full buffer capacity
+            memcpy(buf + byte_filled, cur_location, remaining_buffer_size);
+            byte_filled += remaining_buffer_size;
+            break;
+        }
+        else if (remaining_extent_size < remaining_buffer_size && remaining_buffer_size <= remaining_file_size) {
+            // Reading only the portion of file within the extent;
+            // will need to continue to next extent
+            memcpy(buf + byte_filled, cur_location, remaining_extent_size);
+            byte_filled += remaining_extent_size;
+            // No need to handle other counters since this iteration will end here
+        }
+        else {
+            // Reading to the end of file
+            memcpy(buf + byte_filled, cur_location, remaining_file_size);
+            byte_filled += remaining_file_size;
+            break;
+        }
+    }
+
+    return byte_filled;
 }
 
 /**
@@ -1743,12 +2064,117 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
 	fs_ctx *fs = get_fs();
 
 	//TODO
-	(void)path;
-	(void)buf;
-	(void)size;
-	(void)offset;
-	(void)fs;
-	return -ENOSYS;
+//	(void)path;
+//	(void)buf;
+//	(void)size;
+//	(void)offset;
+//	(void)fs;
+
+//    // Follow the path to find the file
+//    char cpy_path[(int)strlen(path)+1];
+//    strcpy(cpy_path, path);
+//    char *delim = "/";
+//    char *curfix = strtok(cpy_path, delim);
+//
+//    // clarify the confussion of treating the last one as none directory and return error
+//    // int fix_count = num_entry_name(path);
+//    int cur_fix_index = 1;
+//
+    // Loop through the tokens on the path to find the location we are interested in
+    void *image = fs->image;
+    a1fs_superblock *sb = (void *)image;
+    a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
+//    a1fs_inode *cur = first_inode;
+//
+//    a1fs_extent *extent;
+//    a1fs_dentry *dentry;
+//
+//    while (curfix != NULL) {
+//        // not a directory
+//        if (!(cur->mode & S_IFDIR)) {
+//            return -ENOTDIR;
+//        }
+//        cur_fix_index++;
+//
+//        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
+//        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
+//
+//        for (int i = 0; i < cur->dentry_count; cur++) {
+//            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
+//            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
+//                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
+//                break;
+//            }
+//        }
+//    }
+
+    // Find the inode for file we are looking for
+    int inode_index = find_inode_from_path(path);
+    a1fs_inode *cur = (void *)first_inode + inode_index * sizeof(a1fs_inode);
+
+    // Now cur should be pointing to the file we are reading
+    a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
+    unsigned int extent_count = cur->ext_count;
+    unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
+
+    // If more space is needed in the file, call truncate to save more space for it
+    if ((int)(offset + size) > (int)cur->size) {
+        unsigned int original_size = cur->size;
+	int err = a1fs_truncate(path, offset + size);
+        if (err != 0) { return err; }
+
+        if (offset > original_size - 1) {
+            // An unattended hole occurred; fill it with all 0's
+            for (unsigned i = original_size - 1; i < offset; i++) {
+                file_start[i] = 0;
+            }
+        }
+    }
+
+    // Start to loop through the file and load the file with contents in the buffer
+    unsigned int byte_filled = 0;
+    unsigned char *cur_location;
+    unsigned int passed_offset = 0;
+
+    for (unsigned int i = 0; i < extent_count; i++) {
+        unsigned int cur_extent_size = file_extent[i].count * A1FS_BLOCK_SIZE;
+        unsigned int cur_extent_processed_size = 0;
+
+        // Update the current location to the start of the current extent
+        cur_location = (void *)image + file_extent[i].start * A1FS_BLOCK_SIZE;
+
+        while (passed_offset < offset) {
+            // Loop through the portion skipped by the offset
+            unsigned int remaining_offset = offset - passed_offset;
+            unsigned int num_bytes_to_pass = remaining_offset < cur_extent_size ? remaining_offset : cur_extent_size;
+            cur_location += num_bytes_to_pass;
+            passed_offset += num_bytes_to_pass;
+            cur_extent_processed_size += num_bytes_to_pass;
+        }
+
+        // Load the current location with contents in the buffer
+        unsigned int remaining_file_size = cur->size - offset - byte_filled;
+        unsigned int remaining_extent_size = cur_extent_size - cur_extent_processed_size;
+        unsigned int remaining_buffer_size = size - byte_filled;
+
+        if (remaining_buffer_size <= remaining_extent_size) {
+            // Loading all remaining contents in buffer to the location
+            memcpy(cur_location, buf + byte_filled, remaining_buffer_size);
+            cur_location += remaining_buffer_size;
+            byte_filled += remaining_buffer_size;
+            remaining_file_size -= remaining_buffer_size;
+            break;
+        } else {
+            memcpy(cur_location, buf + byte_filled, remaining_extent_size);
+            cur_location += remaining_extent_size;
+            byte_filled += remaining_extent_size;
+            remaining_file_size -= remaining_extent_size;
+            // No need to handle other counters since this iteration will end here
+        }
+
+    }
+
+    return byte_filled;
 }
 
 static struct fuse_operations a1fs_ops = {
