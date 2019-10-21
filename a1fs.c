@@ -1708,43 +1708,46 @@ static int a1fs_truncate(const char *path, off_t size)
 //	(void)size;
 //	(void)fs;
 
-    // Follow the path to find the file
-    char cpy_path[(int)strlen(path)+1];
-    strcpy(cpy_path, path);
-    char *delim = "/";
-    char *curfix = strtok(cpy_path, delim);
-
-    // clarify the confussion of treating the last one as none directory and return error
-    // int fix_count = num_entry_name(path);
-    int cur_fix_index = 1;
+//    // Follow the path to find the file
+//    char cpy_path[(int)strlen(path)+1];
+//    strcpy(cpy_path, path);
+//    char *delim = "/";
+//    char *curfix = strtok(cpy_path, delim);
+//
+//    // clarify the confussion of treating the last one as none directory and return error
+//    // int fix_count = num_entry_name(path);
+//    int cur_fix_index = 1;
 
     // Loop through the tokens on the path to find the location we are interested in
     void *image = fs->image;
     a1fs_superblock *sb = (void *)image;
     a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
     a1fs_inode *cur = first_inode;
-
-    a1fs_extent *extent;
-    a1fs_dentry *dentry;
-
-    while (curfix != NULL) {
-        // not a directory
-        if (!(cur->mode & S_IFDIR)) {
-            return -ENOTDIR;
-        }
-        cur_fix_index++;
-
-        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
-        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
-
-        for (int i = 0; i < cur->dentry_count; cur++) {
-            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
-            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
-                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
-                break;
-            }
-        }
-    }
+//
+//    a1fs_extent *extent;
+//    a1fs_dentry *dentry;
+//
+//    while (curfix != NULL) {
+//        // not a directory
+//        if (!(cur->mode & S_IFDIR)) {
+//            return -ENOTDIR;
+//        }
+//        cur_fix_index++;
+//
+//        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
+//        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
+//
+//        for (int i = 0; i < cur->dentry_count; cur++) {
+//            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
+//            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
+//                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
+//                break;
+//            }
+//        }
+//    }
+    // Find the inode for file we are looking for
+    int inode_index = find_inode_from_path(path);
+    a1fs_inode *cur = (void *)first_inode + inode_index * sizeof(a1fs_inode);
 
     // Now cur should be pointing to the file we are reading
     a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
@@ -1920,43 +1923,46 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 //	(void)offset;
 //	(void)fs;
 
-	// Follow the path to find the file
-    char cpy_path[(int)strlen(path)+1];
-    strcpy(cpy_path, path);
-    char *delim = "/";
-    char *curfix = strtok(cpy_path, delim);
-
-    // clarify the confussion of treating the last one as none directory and return error
-    // int fix_count = num_entry_name(path);
-    int cur_fix_index = 1;
-
+//	// Follow the path to find the file
+//    char cpy_path[(int)strlen(path)+1];
+//    strcpy(cpy_path, path);
+//    char *delim = "/";
+//    char *curfix = strtok(cpy_path, delim);
+//
+//    // clarify the confussion of treating the last one as none directory and return error
+//    // int fix_count = num_entry_name(path);
+//    int cur_fix_index = 1;
+//
     // Loop through the tokens on the path to find the location we are interested in
     void *image = fs->image;
     a1fs_superblock *sb = (void *)image;
     a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
     a1fs_inode *cur = first_inode;
-
-    a1fs_extent *extent;
-    a1fs_dentry *dentry;
-
-    while (curfix != NULL) {
-        // not a directory
-        if (!(cur->mode & S_IFDIR)) {
-            return -ENOTDIR;
-        }
-        cur_fix_index++;
-
-        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
-        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
-
-        for (int i = 0; i < cur->dentry_count; cur++) {
-            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
-            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
-                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
-                break;
-            }
-        }
-    }
+//
+//    a1fs_extent *extent;
+//    a1fs_dentry *dentry;
+//
+//    while (curfix != NULL) {
+//        // not a directory
+//        if (!(cur->mode & S_IFDIR)) {
+//            return -ENOTDIR;
+//        }
+//        cur_fix_index++;
+//
+//        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
+//        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
+//
+//        for (int i = 0; i < cur->dentry_count; cur++) {
+//            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
+//            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
+//                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
+//                break;
+//            }
+//        }
+//    }
+    // Find the inode for file we are looking for
+    int inode_index = find_inode_from_path(path);
+    a1fs_inode *cur = (void *)first_inode + inode_index * sizeof(a1fs_inode);
 
     // Now cur should be pointing to the file we are reading
     a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
@@ -2046,43 +2052,47 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
 //	(void)offset;
 //	(void)fs;
 
-    // Follow the path to find the file
-    char cpy_path[(int)strlen(path)+1];
-    strcpy(cpy_path, path);
-    char *delim = "/";
-    char *curfix = strtok(cpy_path, delim);
-
-    // clarify the confussion of treating the last one as none directory and return error
-    // int fix_count = num_entry_name(path);
-    int cur_fix_index = 1;
-
+//    // Follow the path to find the file
+//    char cpy_path[(int)strlen(path)+1];
+//    strcpy(cpy_path, path);
+//    char *delim = "/";
+//    char *curfix = strtok(cpy_path, delim);
+//
+//    // clarify the confussion of treating the last one as none directory and return error
+//    // int fix_count = num_entry_name(path);
+//    int cur_fix_index = 1;
+//
     // Loop through the tokens on the path to find the location we are interested in
     void *image = fs->image;
     a1fs_superblock *sb = (void *)image;
     a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
-    a1fs_inode *cur = first_inode;
+//    a1fs_inode *cur = first_inode;
+//
+//    a1fs_extent *extent;
+//    a1fs_dentry *dentry;
+//
+//    while (curfix != NULL) {
+//        // not a directory
+//        if (!(cur->mode & S_IFDIR)) {
+//            return -ENOTDIR;
+//        }
+//        cur_fix_index++;
+//
+//        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
+//        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
+//
+//        for (int i = 0; i < cur->dentry_count; cur++) {
+//            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
+//            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
+//                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
+//                break;
+//            }
+//        }
+//    }
 
-    a1fs_extent *extent;
-    a1fs_dentry *dentry;
-
-    while (curfix != NULL) {
-        // not a directory
-        if (!(cur->mode & S_IFDIR)) {
-            return -ENOTDIR;
-        }
-        cur_fix_index++;
-
-        extent = (void *) image + cur->ext_block * A1FS_BLOCK_SIZE;
-        dentry = (void *) image + extent->start * A1FS_BLOCK_SIZE;
-
-        for (int i = 0; i < cur->dentry_count; cur++) {
-            dentry = (void *) dentry + i * sizeof(a1fs_dentry);
-            if (strcmp(dentry->name, curfix) == 0) { // directory/file is found
-                cur = (void *) first_inode + dentry->ino * sizeof(a1fs_inode);
-                break;
-            }
-        }
-    }
+    // Find the inode for file we are looking for
+    int inode_index = find_inode_from_path(path);
+    a1fs_inode *cur = (void *)first_inode + inode_index * sizeof(a1fs_inode);
 
     // Now cur should be pointing to the file we are reading
     a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
