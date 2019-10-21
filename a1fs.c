@@ -596,10 +596,11 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	// IMPLEMENTATION
 	(void)fs;
-	char cpy_path[(int)strlen(path) + 1];
-	strcpy(cpy_path, path);
-	char *delim = "/";
-	char *curfix = strtok(cpy_path, delim);
+
+	// char cpy_path[(int)strlen(path) + 1];
+	// strcpy(cpy_path, path);
+	// char *delim = "/";
+	// char *curfix = strtok(cpy_path, delim);
 
 	// Loop through the tokens on the path to find the location we are interested in
 	void *image = fs->image;
@@ -610,7 +611,7 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	int cur_ino = find_inode_from_path(path);
 	if (cur_ino < 0)
 	{
-		fprintf("Inode for the path not exist.\n");
+		fprintf(stderr, "Inode for the path not exist.\n");
 		return 1;
 	}
 	cur = (void *)first_inode + sizeof(a1fs_inode);
@@ -1467,15 +1468,6 @@ static int a1fs_rename(const char *from, const char *to)
 	int to_parent_inode_index = find_inode_from_path(to_parent);
 	int to_inode_index = find_inode_from_path(to);
 	printf("from_parent_inode_index: %d, to_parent_inode_index: %d, to_inode_index: %d\n", from_parent_inode_index, to_parent_inode_index, to_inode_index);
-	// if (to_inode_index < 0){
-	// 	a1fs_dentry *target_to_entry = (void *)first_to_parent_entry + ext_to_ind*sizeof(a1fs_dentry);
-	// 	a1fs_inode *remove_inode = (void *)image + target_to_entry->ino*A1FS_BLOCK_SIZE;
-	// 	if (remove_inode->mode & S_IFDIR){  // Directory
-	// 		a1fs_rmdir(to);
-	// 	}else{  // Regular file
-	// 		a1fs_unlink(to);
-	// 	}
-	// }
 
 	a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
 
@@ -1487,7 +1479,7 @@ static int a1fs_rename(const char *from, const char *to)
 	a1fs_extent *to_parent_extend = (void *)image + to_parent_inode->ext_block * A1FS_BLOCK_SIZE;
 	a1fs_dentry *first_to_parent_entry = (void *)image + to_parent_extend->start * A1FS_BLOCK_SIZE;
 	// a1fs_inode *from_inode = (void *)image + from_inode_index * A1FS_BLOCK_SIZE;
-	a1fs_inode *to_inode = (void *)first_inode + to_inode_index * sizeof(a1fs_inode);
+	// a1fs_inode *to_inode = (void *)first_inode + to_inode_index * sizeof(a1fs_inode);
 
 	char entry_from_name[strlen(from) + 1];
 	get_last_entry(from, entry_from_name);
@@ -1529,23 +1521,35 @@ static int a1fs_rename(const char *from, const char *to)
 	}
 
 	a1fs_dentry *target_from_entry = (void *)first_from_entry + ext_ind * sizeof(a1fs_dentry);
-	a1fs_dentry *new_entry = (void *)first_to_parent_entry + to_parent_inode->ext_count * sizeof(a1fs_dentry);
+	a1fs_dentry *new_entry = (void *)first_to_parent_entry + to_parent_inode->dentry_count * sizeof(a1fs_dentry);
 
 	printf("Before moving:\n");
 	printf("target_from_entry->name: %s ", target_from_entry->name);
 	printf("target_from_entry->ino: %d\n", target_from_entry->ino);
 
 	new_entry->ino = target_from_entry->ino;
-	strcpy(new_entry->name, target_from_entry->name);
+	strcpy(new_entry->name, entry_to_name);
 
 	printf("After moving:\n");
 	printf("new_entry->name: %s ", new_entry->name);
 	printf("new_entry->ino: %d\n", new_entry->ino);
 
+	printf("Before forward_layback_extents:\n");
+	printf("from_parent_inode->ext_block: %ld ", from_parent_inode->ext_block);
+	printf("first_from_entry->ino: %d ", first_from_entry->ino);
+	printf("first_from_entry->name: %s\n", first_from_entry->name);
+	printf("target_from_entry->ino: %d ", target_from_entry->ino);
+	printf("target_from_entry->name: %s\n", target_from_entry->name);
+	printf("ext_ind: %d\n", ext_ind);
+
 	forward_layback_extents(from_parent_inode, first_from_entry, target_from_entry, ext_ind);
 
-	from_parent_inode->ext_count--;
-	to_inode->ext_count++;
+	printf("from_parent_inode->ext_block:%ld, from_parent_inode->dentry_count before modification: %d\n", from_parent_inode->ext_block, from_parent_inode->dentry_count);
+	from_parent_inode->dentry_count--;
+	printf("from_parent_inode->ext_block:%ld, from_parent_inode->dentry_count after modification: %d\n", from_parent_inode->ext_block, from_parent_inode->dentry_count);
+	to_parent_inode->dentry_count++;
+	
+	printf("Finish rename\n");
 
 	return 0;
 }
