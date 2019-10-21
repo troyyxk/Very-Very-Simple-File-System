@@ -1752,7 +1752,7 @@ static int a1fs_truncate(const char *path, off_t size)
     // Now cur should be pointing to the file we are reading
     a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
     unsigned int extent_count = cur->ext_count;
-    unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
+//    unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
 
     // Store the end of file (aka last byte of the file)
     unsigned char *eof = (void *)image + file_extent->start * A1FS_BLOCK_SIZE + cur->size - 1;
@@ -1768,7 +1768,7 @@ static int a1fs_truncate(const char *path, off_t size)
     // Store the address of the data block bitmap
     a1fs_blk_t *db_bitmap = (void *)image + sb->first_db * A1FS_BLOCK_SIZE;
 
-    if (size > cur->size) {
+    if ((int)size > (int)cur->size) {
         // The size of the file should expand to size
         unsigned int bytes_to_add = size - cur->size;
         if (bytes_to_add <= last_block_remaining) {
@@ -1790,13 +1790,14 @@ static int a1fs_truncate(const char *path, off_t size)
             eof += bytes_to_add;
 
             // Find and allocate new extents
-            int *new_extent_start;
-            int empty_trunk_length = find_max_free_chunk(
+            int *new_extent_start = malloc(sizeof(int));
+	    int empty_chunk_length;
+            empty_chunk_length = find_max_free_chunk(
                     (void *)image + sb->first_db * A1FS_BLOCK_SIZE,
                     sb->db_count,
                     new_extent_start
                     );
-            while (empty_trunk_length != 0 && bytes_to_add > 0) {
+            while (empty_chunk_length != 0 && bytes_to_add > 0) {
                 // Store the location of the current longest trunk
                 unsigned char *extent_start_loc =
                         (void *)image + (sb->first_db + *new_extent_start) * A1FS_BLOCK_SIZE;
@@ -1806,7 +1807,7 @@ static int a1fs_truncate(const char *path, off_t size)
                 file_extent[cur->ext_count - 1].count = 0;
 
                 // Make use of the current longest chunk of free blocks
-                for (int i = 0; i < empty_trunk_length; i++) {
+                for (int i = 0; i < empty_chunk_length; i++) {
                     // Fill the block with the contents
                     unsigned char *cur_block = (void *)extent_start_loc + i * A1FS_BLOCK_SIZE;
                     unsigned int num_byte_to_write =
@@ -1826,10 +1827,20 @@ static int a1fs_truncate(const char *path, off_t size)
 
                     // Break the loop if all bytes are added
                     if (bytes_to_add == 0) { break; }
+
+		    // Find the next empty chunk for more contents
+		    empty_chunk_length = find_max_free_chunk(
+                            (void *)image + sb->first_db * A1FS_BLOCK_SIZE,
+                            sb->db_count,
+                            new_extent_start
+                            );
                 }
+
+		// Free the malloc-ed space
+		free(new_extent_start);
             }
 
-            if (empty_trunk_length == 0) {
+            if (empty_chunk_length == 0) {
                 return -ENOSPC;
             }
         }
@@ -1860,7 +1871,7 @@ static int a1fs_truncate(const char *path, off_t size)
             // Continue to free other blocks ahead of the blocks we have just freed
             while (bytes_to_remove > 0) {
                 last_extent = file_extent[cur->ext_count - 1];
-                for (unsigned int i = last_extent.count - 1; i >= 0; i--) {
+                for (int i = last_extent.count - 1; i >= 0; i--) {
                     // Remove needed contents in the loop
                     unsigned int num_bytes_to_remove =
                             (bytes_to_remove <= A1FS_BLOCK_SIZE) ? bytes_to_remove : A1FS_BLOCK_SIZE;
@@ -2101,7 +2112,9 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
     // If more space is needed in the file, call truncate to save more space for it
     if ((int)(offset + size) > (int)cur->size) {
         unsigned int original_size = cur->size;
-        if (int err = a1fs_truncate(path, offset + size) != 0) { return err; }
+	int err = a1fs_truncate(path, offset + size);
+        if (err != 0) { return err; }
+
         if (offset > original_size - 1) {
             // An unattended hole occurred; fill it with all 0's
             for (unsigned i = original_size - 1; i < offset; i++) {
