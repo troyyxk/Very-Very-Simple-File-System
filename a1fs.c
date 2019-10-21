@@ -580,7 +580,7 @@ static int a1fs_getattr(const char *path, struct stat *st)
 static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 						off_t offset, struct fuse_file_info *fi)
 {
-	printf("Start a1fs_readdir.\n");
+	printf("Start a1fs_readdir with path: %s\n", path);
 	(void)offset; // unused
 	(void)fi;	 // unused
 	fs_ctx *fs = get_fs();
@@ -607,26 +607,24 @@ static int a1fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 	a1fs_superblock *sb = (void *)image;
 	a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
 	a1fs_inode *cur = first_inode;
-
+	
 	int cur_ino = find_inode_from_path(path);
 	if (cur_ino < 0)
 	{
 		fprintf(stderr, "Inode for the path not exist.\n");
 		return 1;
 	}
-	cur = (void *)first_inode + sizeof(a1fs_inode);
-	a1fs_extent *cur_extent = (void *)image + first_inode->ext_block * A1FS_BLOCK_SIZE;
-	filler(buf, ".", NULL, 0);
-	filler(buf, "..", NULL, 0);
+	cur = (void *)first_inode + cur_ino*sizeof(a1fs_inode);
+	a1fs_extent *cur_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
 	a1fs_dentry *first_entry = (void *)image + cur_extent->start * A1FS_BLOCK_SIZE;
+	printf("first_entry->ino: %d, first_entry->name: %s\n", first_entry->ino, first_entry->name);
 	a1fs_dentry *cur_entry;
+	printf("cur->dentry_count: %d\n", cur->dentry_count);
 	for (int i = 0; i < cur->dentry_count; i++)
 	{
 		cur_entry = (void *)first_entry + i * sizeof(a1fs_dentry);
-		if (cur_entry->ino != 0)
-		{
-			filler(buf, cur_entry->name, NULL, 0);
-		}
+		printf("cur_entry->ino: %d, cur_entry->name: %s\n", cur_entry->ino, cur_entry->name);
+		filler(buf, cur_entry->name, NULL, 0);
 	}
 
 	return 0;
