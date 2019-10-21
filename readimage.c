@@ -14,6 +14,13 @@
 // Pointer to the 0th byte of the image
 unsigned char *image;
 
+void print_string(const char *buf, int size){
+	for (int i = 0; i < size; i++){
+		printf("%c", buf[i]);
+	}
+	printf("\n");
+}
+
 /** Check in the bitmap if the bit is 0 (free) */
 int checkBit(uint32_t *bitmap, uint32_t i)
 {
@@ -157,14 +164,14 @@ int main(int argc, char **argv)
     printf("Directory Block:\n");
     for (int bit = 0; bit < sb->inode_count; bit++)
     {
+        a1fs_extent *first_extent = (void *)image + (inode->ext_block * A1FS_BLOCK_SIZE);
+        a1fs_extent *cur_extent;
         if (checkBit(inode_bitmap, bit))
         { // bit map is 1
             inode = (void *)inode_block + bit * sizeof(a1fs_inode);
             if (inode->mode & S_IFDIR)
             { // this is a directory
                 printf("Directory Extend Block Number: %ld (for Inode Number %d)\n", inode->ext_block, bit);
-                a1fs_extent *first_extent = (void *)image + (inode->ext_block * A1FS_BLOCK_SIZE);
-                a1fs_extent *cur_extent;
                 for (int i = 0; i < inode->ext_count; i++)
                 {
                     cur_extent = (void *)first_extent + (i * sizeof(a1fs_extent));
@@ -178,8 +185,19 @@ int main(int argc, char **argv)
                     }
                 }
             }
-            // bitmap count starts form 0
+        }else
+        {
+            // cur_extent = (void *)first_extent;
+            char *buf = (void *)image + first_extent->start*A1FS_BLOCK_SIZE;
+            printf("\n");
+            printf("File:\n");
+            print_string(buf, inode->size);
+            printf("\n");
+            printf("\n");
+
         }
+            // bitmap count starts form 0
+        
     }
 
     return 0;
