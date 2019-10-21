@@ -200,6 +200,40 @@ int find_free_from_bitmap(a1fs_blk_t *bitmap, int size)
 }
 
 /**
+ * Find the longest unused chunk of blocks in the data block bitmap starting
+ * at bm_start and has quantity bm_size, load it to the address free_start,
+ * and return the number of blocks in the trunk.
+ *
+ * @param bm_start    the address of the start of the bitmap
+ * @param bm_size     the size of the bitmap
+ * @param free_start  the address to store the start of the free trunk
+ * @return            the number of free blocks in the trunk;
+ *                    0 if all blocks are taken
+ */
+ int find_max_free_chunk(a1fs_blk_t *bm_start, unsigned int bm_size, unsigned char *free_start) {
+     int cur_max = 0;
+     int cur_count = 0;
+     unsigned char *cur_end = (unsigned char *)bm_start;
+     for (unsigned int i = 0; i < bm_size; i++) {
+         if (checkBit((uint32_t *)bm_start, i) == 0) {
+             cur_count++;
+             if (cur_count > cur_max) {
+                 cur_max++;
+                 cur_end = (unsigned char*)bm_start + i;
+             }
+         } else {
+             cur_count = 0;
+         }
+     }
+
+     if (cur_max > 0) {
+         free_start = cur_end - cur_max + 1;
+     }
+
+     return cur_max;
+ }
+
+/**
  * Get a list of names of directory entries from a path, and fill them
  * into the address in the parameter
  *
