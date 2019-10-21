@@ -24,17 +24,23 @@ int checkBit(uint32_t *bitmap, uint32_t i)
 }
 
 /** Print Bitmap */
-int print_bitmap(a1fs_blk_t *bitmap)
+int print_bitmap(a1fs_blk_t *bitmap, int size)
 {
-    for (int byte = 0; byte < 16; byte++)
+    if (size >32){
+        size = 32;
+    }
+    for (int i = 0; i < size; i++)
     {
         // Print the bits within the current byte
-        for (int bit = 0; bit < 8; bit++)
-        {
-            printf("%d", (bitmap[byte] & (1 << bit)) > 0);
+        if(checkBit(bitmap, i)){
+            printf("1");
+        } else{
+            printf("0");
         }
         // Print the space to separate bytes
-        printf(" ");
+        if (i!= 0 && i%8 == 0){
+            printf(" ");
+        }
     }
     // Line break
     printf("\n");
@@ -103,7 +109,7 @@ int main(int argc, char **argv)
     //         printf(" ");
     //     }
     // }
-    print_bitmap(inode_bitmap);
+    print_bitmap(inode_bitmap, sb->inode_count);
     printf("\n");
 
     // Print Block Bitmap
@@ -119,7 +125,7 @@ int main(int argc, char **argv)
     //         printf(" ");
     //     }
     // }
-    print_bitmap(data_bitmap);
+    print_bitmap(data_bitmap, sb->dblock_count);
     printf("\n");
 
     printf("\n");

@@ -164,14 +164,19 @@ int forward_layback_extents(a1fs_inode *cur, a1fs_dentry *first_entry, a1fs_dent
 void setBitOn(uint32_t *A, uint32_t i)
 {
 	// int int_bits = sizeof(uint32_t) * 8;
-	A[i / 32] |= 1 << (i % 32);
+	int d = i/32;
+	int k = i%32;
+	A[d] = A[d] | 1 << (k);
 }
 
 // Set the i-th index of the bitmap to 0
 void setBitOff(uint32_t *A, uint32_t i)
 {
 	// int int_bits = sizeof(uint32_t) * 8;
-	A[i / 32] &= ~(1 << (i % 32));
+	int d = i/32;
+	int k = i%32;
+	A[d] = A[d] & (~(1 << (k)));
+	// A[i / 32] &= ~(1 << (i % 32));
 }
 
 /** Check in the bitmap if the bit is 0 (free) */
