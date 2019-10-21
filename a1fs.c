@@ -1751,11 +1751,6 @@ static int a1fs_truncate(const char *path, off_t size)
     unsigned int extent_count = cur->ext_count;
     unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
 
-    // Set current location to be the beginning of the last extent
-//    unsigned char *last_extent_loc = (void *)image + file_extent[extent_count - 1].start * A1FS_BLOCK_SIZE;
-//    unsigned char *last_block =
-//            (void *)last_extent_loc + (file_extent[extent_count - 1].count - 1) + A1FS_BLOCK_SIZE;
-
     // Store the end of file (aka last byte of the file)
     unsigned char *eof = (void *)image + file_extent->start * A1FS_BLOCK_SIZE + cur->size - 1;
 
@@ -1766,6 +1761,9 @@ static int a1fs_truncate(const char *path, off_t size)
     }
     unsigned int last_block_remaining = total_block_size - cur->size;
     unsigned int last_block_used = A1FS_BLOCK_SIZE - last_block_remaining;
+
+    // Store the address of the data block bitmap
+    a1fs_blk_t *db_bitmap = (void *)image + sb->first_db * A1FS_BLOCK_SIZE;
 
     if (size > cur->size) {
         // The size of the file should expand to size
@@ -1818,7 +1816,6 @@ static int a1fs_truncate(const char *path, off_t size)
                     eof += num_byte_to_write;
 
                     // Register the block as used in the data bitmap
-                    a1fs_blk_t *db_bitmap = (void *)image + sb->first_db * A1FS_BLOCK_SIZE;
                     setBitOn(db_bitmap, *new_extent_start + i);
 
                     // Register the block as a count in the extent
@@ -1835,7 +1832,55 @@ static int a1fs_truncate(const char *path, off_t size)
         }
     } else {
         // The size of the file should shrink to size
+        unsigned int bytes_to_remove = cur->size - size;
+        if (bytes_to_remove <= last_block_used) {
+            // Remove contents within the last block
+            cur->size -= bytes_to_remove;
+            eof -= bytes_to_remove;
+        } else {
+            // Need to trace blocks and remove them
+            // Remove all contents from the current block
+            cur->size -= last_block_used;
+            bytes_to_remove -= last_block_used;
+            eof -= last_block_used;
+
+            // Unregister the last block from the bitmap
+            a1fs_extent last_extent = file_extent[cur->ext_count - 1];
+            unsigned int block_index = last_extent.start + last_extent.count;
+            setBitOff(db_bitmap, block_index);
+
+            // Unregister the last block from the extent
+            file_extent[cur->ext_count - 1].count--;
+            // If the extent has no more blocks, unregister it from the inode
+            cur->ext_count--;
+
+            // Continue to free other blocks ahead of the blocks we have just freed
+            while (bytes_to_remove > 0) {
+                last_extent = file_extent[cur->ext_count - 1];
+                for (unsigned int i = last_extent.count - 1; i >= 0; i--) {
+                    // Remove needed contents in the loop
+                    unsigned int num_bytes_to_remove =
+                            (bytes_to_remove <= A1FS_BLOCK_SIZE) ? bytes_to_remove : A1FS_BLOCK_SIZE;
+                    cur->size -= num_bytes_to_remove;
+                    bytes_to_remove -= num_bytes_to_remove;
+                    eof -= num_bytes_to_remove;
+
+                    // If all contents are removed, unregister the block
+                    block_index = last_extent.start + last_extent.count;
+                    setBitOff(db_bitmap, block_index);
+                    file_extent[cur->ext_count - 1].count--;
+                }
+
+                // If all blocks in the extent has been removed, unregister the extent
+                if (bytes_to_remove > 0) {
+                    cur->ext_count--;
+                }
+            }
+        }
     }
+
+    // The function has succeeded if it reaches this point
+    return 0;
 }
 
 /**
