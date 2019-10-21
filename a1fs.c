@@ -1866,13 +1866,18 @@ static int a1fs_truncate(const char *path, off_t size)
                     eof -= num_bytes_to_remove;
 
                     // If all contents are removed, unregister the block
-                    block_index = last_extent.start + last_extent.count;
-                    setBitOff(db_bitmap, block_index);
-                    file_extent[cur->ext_count - 1].count--;
+                    if (num_bytes_to_remove == A1FS_BLOCK_SIZE) {
+                        block_index = last_extent.start + last_extent.count;
+                        setBitOff(db_bitmap, block_index);
+                        file_extent[cur->ext_count - 1].count--;
+                    }
+
+                    // If all needed bytes are removed, break the loop
+                    if (bytes_to_remove == 0) { break; }
                 }
 
                 // If all blocks in the extent has been removed, unregister the extent
-                if (bytes_to_remove > 0) {
+                if (file_extent[cur->ext_count - 1].count == 0) {
                     cur->ext_count--;
                 }
             }
