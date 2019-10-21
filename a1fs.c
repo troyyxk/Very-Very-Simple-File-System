@@ -1722,7 +1722,7 @@ static int a1fs_truncate(const char *path, off_t size)
     void *image = fs->image;
     a1fs_superblock *sb = (void *)image;
     a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
-    a1fs_inode *cur = first_inode;
+//    a1fs_inode *cur = first_inode;
 //
 //    a1fs_extent *extent;
 //    a1fs_dentry *dentry;
@@ -1937,7 +1937,7 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
     void *image = fs->image;
     a1fs_superblock *sb = (void *)image;
     a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
-    a1fs_inode *cur = first_inode;
+//    a1fs_inode *cur = first_inode;
 //
 //    a1fs_extent *extent;
 //    a1fs_dentry *dentry;
@@ -1967,10 +1967,9 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
     // Now cur should be pointing to the file we are reading
     a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
     unsigned int extent_count = cur->ext_count;
-    unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
 
     // If the offset is already after the end of the file, return 0 instantly.
-    if (offset > cur->size) { return 0; }
+    if ((int)offset > (int)cur->size) { return 0; }
     // Otherwise, start to loop through the file and load the buffer
     unsigned int byte_filled = 0;
     unsigned char *cur_location;
@@ -2100,7 +2099,7 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
     unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
 
     // If more space is needed in the file, call truncate to save more space for it
-    if (offset + size > cur->size) {
+    if ((int)(offset + size) > (int)cur->size) {
         unsigned int original_size = cur->size;
         if (int err = a1fs_truncate(path, offset + size) != 0) { return err; }
         if (offset > original_size - 1) {
