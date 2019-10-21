@@ -403,6 +403,7 @@ static int a1fs_statfs(const char *path, struct statvfs *st)
 	st->f_frsize = A1FS_BLOCK_SIZE;
 	//TODO
 	(void)fs;
+	a1fs_superblock *sb = (void *)fs->image;
 	st->f_namemax = A1FS_NAME_MAX;
 
 	return -ENOSYS;
@@ -1486,19 +1487,28 @@ static int a1fs_rename(const char *from, const char *to)
 		return -ENOSPC;
 	}
 
-	
+
+	printf("Before getting ext_ind for entry_from_name (%s) form from_parent_inode\n", entry_from_name);	
 	int ext_ind = get_ext_index_from_inode(from_parent_inode, entry_from_name);
 	if (ext_ind < 0){
 		fprintf(stderr, "Error with get_ext_index_from_inode.\n");
 		return 1;
 	}
 
-	printf("Before moving:\n");
 	a1fs_dentry *target_from_entry = (void *)first_from_entry + ext_ind*sizeof(a1fs_dentry);
 	a1fs_dentry *new_entry = (void *)first_to_parent_entry + to_parent_inode->ext_count*sizeof(a1fs_dentry);
 	
+	printf("Before moving:\n");
+	printf("target_from_entry->name: %s ", target_from_entry->name);
+	printf("target_from_entry->ino: %d\n", target_from_entry->ino);
+
+
 	new_entry->ino = target_from_entry->ino;
 	strcpy(new_entry->name, target_from_entry->name);
+
+	printf("After moving:\n");
+	printf("new_entry->name: %s ", new_entry->name);
+	printf("new_entry->ino: %d\n", new_entry->ino);
 
 	forward_layback_extents(from_parent_inode, first_from_entry, target_from_entry, ext_ind);
 
