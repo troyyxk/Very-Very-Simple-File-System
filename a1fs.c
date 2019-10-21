@@ -1714,6 +1714,7 @@ static int a1fs_utimens(const char *path, const struct timespec tv[2])
  */
 static int a1fs_truncate(const char *path, off_t size)
 {
+        printf("Start truncating file on path [%s] with size %ld\n", path, size);
 	fs_ctx *fs = get_fs();
 
 	//TODO
@@ -1763,6 +1764,8 @@ static int a1fs_truncate(const char *path, off_t size)
     a1fs_inode *cur = (void *)first_inode + inode_index * sizeof(a1fs_inode);
 
     // Now cur should be pointing to the file we are reading
+    printf("File located; original size: %ld\n", cur->size);
+    printf("File extent count: %d", cur->ext_count);
     a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
     unsigned int extent_count = cur->ext_count;
 //    unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
@@ -1786,18 +1789,22 @@ static int a1fs_truncate(const char *path, off_t size)
 	printf("(int)size: %d (int)cur->size: %d\n", (int)size, (int)cur->size);
     if ((int)size > (int)cur->size) {
         // The size of the file should expand to size
+        printf("Start file expansion\n");
         unsigned int bytes_to_add = size - cur->size;
         if (bytes_to_add <= last_block_remaining) {
             // Write within the current block
+            printf("Write within the current block\n");
             for (unsigned int j = 0; j < bytes_to_add; j++) {
                 // Make all bytes in the newly-appended area have value 0
                 eof[j + 1] = 0;
             }
             cur->size += bytes_to_add;
             eof += bytes_to_add;
+            printf("Current size of the file: %ld\n", cur->size);
         } else {
             // Need new blocks for the file
             // Fill the current block
+            printf("Start multi-block extension\n");
             for (unsigned int j = 0; j < last_block_remaining; j++) {
                 eof[j + 1] = 0;
             }
@@ -1813,6 +1820,8 @@ static int a1fs_truncate(const char *path, off_t size)
                     sb->db_count,
                     new_extent_start
                     );
+            printf("New extent: %d blocks starting from block %d", empty_chunk_length, *new_extent_start);
+
             while (empty_chunk_length != 0 && bytes_to_add > 0) {
                 // Store the location of the current longest trunk
                 unsigned char *extent_start_loc =
@@ -1821,6 +1830,7 @@ static int a1fs_truncate(const char *path, off_t size)
                 cur->ext_count++;
                 file_extent[cur->ext_count - 1].start = *new_extent_start;
                 file_extent[cur->ext_count - 1].count = 0;
+                printf("Extent addition complete; current extent count: %d\n", cur->ext_count);
 
                 // Make use of the current longest chunk of free blocks
                 for (int i = 0; i < empty_chunk_length; i++) {
@@ -1834,6 +1844,11 @@ static int a1fs_truncate(const char *path, off_t size)
                     }
                     bytes_to_add -= num_byte_to_write;
                     eof += num_byte_to_write;
+                    cur->size += num_byte_to_write;
+
+                    printf("Loading complete\n");
+                    printf("Remaining bytes to add: %d\n", bytes_to_add);
+                    printf("Current size of file: %ld\n", cur->size);
 
                     // Register the block as used in the data bitmap
                     setBitOn(db_bitmap, *new_extent_start + i);
@@ -1843,17 +1858,20 @@ static int a1fs_truncate(const char *path, off_t size)
 
                     // Break the loop if all bytes are added
                     if (bytes_to_add == 0) { break; }
+		    
+                }
 
-		    // Find the next empty chunk for more contents
+		// Free the malloc-ed space
+		free(new_extent_start);
+		
+		if (bytes_to_add > 0) {
+                    // Find the next empty chunk for more contents
 		    empty_chunk_length = find_max_free_chunk(
                             (void *)image + sb->first_db * A1FS_BLOCK_SIZE,
                             sb->db_count,
                             new_extent_start
                             );
                 }
-
-		// Free the malloc-ed space
-		free(new_extent_start);
             }
 
             if (empty_chunk_length == 0) {
