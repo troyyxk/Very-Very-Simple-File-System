@@ -238,7 +238,7 @@ int find_free_from_bitmap(a1fs_blk_t *bitmap, int size)
      } else {
          printf("All blocks are taken\n");
      }
-aA
+
      return cur_max;
  }
 
