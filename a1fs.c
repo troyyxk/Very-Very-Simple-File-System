@@ -1830,7 +1830,7 @@ static int a1fs_truncate(const char *path, off_t size)
             while (empty_chunk_length != 0 && bytes_to_add > 0) {
                 // Store the location of the current longest trunk
                 unsigned char *extent_start_loc =
-                        (void *)image + (sb->first_db + *new_extent_start) * A1FS_BLOCK_SIZE;
+                        (void *)image + (sb->first_data + *new_extent_start) * A1FS_BLOCK_SIZE;
                 // Make new extent on the file
                 cur->ext_count++;
                 file_extent[cur->ext_count - 1].start = *new_extent_start;
