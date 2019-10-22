@@ -1,5 +1,7 @@
 #!/bin/bash
 
+make all
+
 mkdir /tmp/mnt99
 truncate -s 64M img
 mkfs.a1fs -i 100 img
