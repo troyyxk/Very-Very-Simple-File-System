@@ -204,6 +204,7 @@ int init_inode(a1fs_superblock *sb, void *image, a1fs_blk_t *inode_bitmap, uint6
 	inode->links = 2;
 	inode->size = size;
 	// time
+    clock_gettime(CLOCK_REALTIME, &(inode->mtime));
 	inode->ext_block = sb->first_data;
 	inode->ext_count = 1;
 	inode->dentry_count = 2;
@@ -234,16 +235,7 @@ int init_root(a1fs_superblock *sb, void *image, a1fs_blk_t *data_bitmap)
 	strcpy(entry2->name, "..");
 
 	setBitOn(data_bitmap, 1);
-	// NOT SURE
-
-	// Init inode for the root directory
-    a1fs_inode *rd_inode = (void *)image + sb->first_inode + A1FS_BLOCK_SIZE;
-    rd_inode->mode = S_IFDIR;
-    clock_gettime(CLOCK_REALTIME, &(rd_inode->mtime));
-    rd_inode->size = 0;
-    rd_inode->links = 0;
-
-
+	
     return 0;
 }
 
