@@ -597,7 +597,7 @@ static int a1fs_getattr(const char *path, struct stat *st)
 
 	st->st_mode = cur->mode;
 	st->st_nlink = cur->links;
-	// st->st_size = cur->size;
+	st->st_size = cur->size;
 	st->st_mtime = cur->mtime.tv_sec;
 
 	return 0;

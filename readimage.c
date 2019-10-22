@@ -147,7 +147,7 @@ int main(int argc, char **argv)
         { // bit map is 1
             inode = (void *)inode_block + bit * sizeof(a1fs_inode);
             // bitmap count starts form 0
-            printf("Inode: Inode#: %d, Number of Link: %ld, Number of dentry: %d\n Extend Block: %ld ", bit, inode->links, inode->dentry_count, inode->ext_block);
+            printf("Inode: Inode#: %d, Number of Link: %d, Number of dentry: %d\n Extend Block: %ld ", bit, inode->links, inode->dentry_count, inode->ext_block);
             if (inode->mode & S_IFDIR){
                 printf("Mode: Directory\n");
             }else if (inode->mode & S_IFREG)
@@ -156,6 +156,7 @@ int main(int argc, char **argv)
             }else{
                 printf("Mode: Unknown !!!!!!!!!\n");
             }
+            printf("size: %d",(int)inode->size);
             
         }
     }
@@ -185,16 +186,17 @@ int main(int argc, char **argv)
                     }
                 }
             }
-        }else
-        {
-            // cur_extent = (void *)first_extent;
-            char *buf = (void *)image + first_extent->start*A1FS_BLOCK_SIZE;
-            printf("\n");
-            printf("File:\n");
-            print_string(buf, inode->size);
-            printf("\n");
-            printf("\n");
+            else
+                {
+                    // cur_extent = (void *)first_extent;
+                    char *buf = (void *)image + first_extent->start*A1FS_BLOCK_SIZE;
+                    printf("\n");
+                    printf("File:\n");
+                    print_string(buf, inode->size);
+                    printf("\n");
+                    printf("\n");
 
+                }
         }
             // bitmap count starts form 0
         
