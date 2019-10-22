@@ -1775,6 +1775,7 @@ static int a1fs_truncate(const char *path, off_t size)
     printf("File extent count: %d", cur->ext_count);
     a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
     unsigned int extent_count = cur->ext_count;
+    clock_gettime(CLOCK_REALTIME, &(cur->mtime));
 //    unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
 
     // Find the usage of the last block
@@ -2094,6 +2095,7 @@ static int a1fs_write(const char *path, const char *buf, size_t size,
     a1fs_extent *file_extent = (void *)image + cur->ext_block * A1FS_BLOCK_SIZE;
     unsigned int extent_count = cur->ext_count;
     unsigned char *file_start = (void *)image + file_extent->start * A1FS_BLOCK_SIZE;
+    clock_gettime(CLOCK_REALTIME, &(cur->mtime));
 
     // If more space is needed in the file, call truncate to save more space for it
     if ((int)(offset + size) > (int)cur->size) {
