@@ -216,30 +216,33 @@ int find_free_from_bitmap(a1fs_blk_t *bitmap, int size)
  *                    0 if all blocks are taken
  */
  int find_max_free_chunk(a1fs_blk_t *bm_start, unsigned int bm_size, int *free_start) {
-     printf("Start search for max free chunk\n");
-     int cur_max = 0;
-     int cur_count = 0;
-     int cur_end = 0;
-     for (unsigned int i = 0; i < bm_size; i++) {
-         if (checkBit((uint32_t *)bm_start, i) == 0) {
-             cur_count++;
-             if (cur_count > cur_max) {
-                 cur_max++;
-                 cur_end = i;
-             }
-         } else {
-             cur_count = 0;
-         }
-     }
+//     printf("Start search for max free chunk\n");
+//     int cur_max = 0;
+//     int cur_count = 0;
+//     int cur_end = 0;
+//     for (unsigned int i = 0; i < bm_size; i++) {
+//         if (checkBit((uint32_t *)bm_start, i) == 0) {
+//             cur_count++;
+//             if (cur_count > cur_max) {
+//                 cur_max++;
+//                 cur_end = i;
+//             }
+//         } else {
+//             cur_count = 0;
+//         }
+//     }
+//
+//     if (cur_max > 0) {
+//         *free_start = cur_end - cur_max + 1;
+//         printf("Final result: %d blocks starting from block %d\n", cur_max, *free_start);
+//     } else {
+//         printf("All blocks are taken\n");
+//     }
+//
+//     return cur_max;
 
-     if (cur_max > 0) {
-         *free_start = cur_end - cur_max + 1;
-         printf("Final result: %d blocks starting from block %d\n", cur_max, *free_start);
-     } else {
-         printf("All blocks are taken\n");
-     }
-
-     return cur_max;
+        *free_start = find_free_from_bitmap(bm_start, bm_size);
+        return 1;
  }
 
 /**
