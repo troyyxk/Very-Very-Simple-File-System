@@ -44,6 +44,20 @@
 
 /** HELPER FUNCTIONS **/
 
+/** Own Version of ceil */
+int ceil_division(int a, int b)
+{
+	int cur_result = a / b;
+	if (a % b == 0)
+	{
+		return cur_result;
+	}
+	else
+	{
+		return cur_result + 1;
+	}
+}
+
 /**
  * Return the number of entry names in a path
  *
@@ -597,8 +611,10 @@ static int a1fs_getattr(const char *path, struct stat *st)
 
 	st->st_mode = cur->mode;
 	st->st_nlink = cur->links;
-	st->st_size = cur->size;
+	// int num_sector =  ceil_division(cur->size, 512);
+	// st->st_blocks = num_sector;
 	st->st_mtime = cur->mtime.tv_sec;
+	st->st_size = cur->size;
 
 	return 0;
 }
@@ -1973,24 +1989,6 @@ static int a1fs_read(const char *path, char *buf, size_t size, off_t offset,
 	printf("Start a1fs_read with path: %s, buf: %s, size: %d, offset: %d", path, buf, (int)size, (int)offset);
 	(void)fi; // unused
 	fs_ctx *fs = get_fs();
-
-	//TODO
-//	(void)path;
-//	(void)buf;
-//	(void)size;
-//	(void)offset;
-//	(void)fs;
-
-//	// Follow the path to find the file
-//    char cpy_path[(int)strlen(path)+1];
-//    strcpy(cpy_path, path);
-//    char *delim = "/";
-//    char *curfix = strtok(cpy_path, delim);
-//
-//    // clarify the confussion of treating the last one as none directory and return error
-//    // int fix_count = num_entry_name(path);
-//    int cur_fix_index = 1;
-//
     // Loop through the tokens on the path to find the location we are interested in
     void *image = fs->image;
     a1fs_superblock *sb = (void *)image;
