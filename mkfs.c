@@ -22,6 +22,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "a1fs.h"
 #include "map.h"
