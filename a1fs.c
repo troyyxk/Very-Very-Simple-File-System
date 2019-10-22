@@ -1821,8 +1821,8 @@ static int a1fs_truncate(const char *path, off_t size)
             int *new_extent_start = malloc(sizeof(int));
 	    int empty_chunk_length;
             empty_chunk_length = find_max_free_chunk(
-                    (void *)image + sb->first_db * A1FS_BLOCK_SIZE,
-                    sb->db_count,
+                    db_bitmap,
+                    sb->dblock_count,
                     new_extent_start
                     );
             printf("New extent: %d blocks starting from block %d\n", empty_chunk_length, *new_extent_start);
@@ -1872,8 +1872,8 @@ static int a1fs_truncate(const char *path, off_t size)
 		if (bytes_to_add > 0) {
                     // Find the next empty chunk for more contents
 		    empty_chunk_length = find_max_free_chunk(
-                            (void *)image + sb->first_db * A1FS_BLOCK_SIZE,
-                            sb->db_count,
+                            db_bitmap,
+                            sb->dblock_count,
                             new_extent_start
                             );
                 }
