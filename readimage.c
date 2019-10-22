@@ -156,6 +156,7 @@ int main(int argc, char **argv)
             }else{
                 printf("Mode: Unknown !!!!!!!!!\n");
             }
+            printf("size: %d",(int)inode->size);
             
         }
     }
@@ -185,16 +186,17 @@ int main(int argc, char **argv)
                     }
                 }
             }
-        }else
-        {
-            // cur_extent = (void *)first_extent;
-            char *buf = (void *)image + first_extent->start*A1FS_BLOCK_SIZE;
-            printf("\n");
-            printf("File:\n");
-            print_string(buf, inode->size);
-            printf("\n");
-            printf("\n");
+            else
+                {
+                    // cur_extent = (void *)first_extent;
+                    char *buf = (void *)image + first_extent->start*A1FS_BLOCK_SIZE;
+                    printf("\n");
+                    printf("File:\n");
+                    print_string(buf, inode->size);
+                    printf("\n");
+                    printf("\n");
 
+                }
         }
             // bitmap count starts form 0
         
