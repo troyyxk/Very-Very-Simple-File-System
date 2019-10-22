@@ -611,8 +611,8 @@ static int a1fs_getattr(const char *path, struct stat *st)
 
 	st->st_mode = cur->mode;
 	st->st_nlink = cur->links;
-	// int num_sector =  ceil_division(cur->size, 512);
-	// st->st_blocks = num_sector;
+	int num_sector =  ceil_division(cur->size, 512);
+	st->st_blocks = num_sector;
 	st->st_mtime = cur->mtime.tv_sec;
 	st->st_size = cur->size;
 
