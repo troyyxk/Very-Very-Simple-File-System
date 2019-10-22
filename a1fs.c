@@ -1387,7 +1387,6 @@ static int a1fs_rename(const char *from, const char *to)
 	int from_parent_inode_index = find_inode_from_path(from_parent);
 	// int from_inode_index = find_inode_from_path(from);
 	int to_parent_inode_index = find_inode_from_path(to_parent);
-	int to_inode_index = find_inode_from_path(to);
 
 	a1fs_inode *first_inode = (void *)image + sb->first_inode * A1FS_BLOCK_SIZE;
 
