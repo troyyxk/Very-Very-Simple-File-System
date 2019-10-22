@@ -1877,6 +1877,7 @@ static int a1fs_truncate(const char *path, off_t size)
 
                     // Register the block as used in the data bitmap
                     setBitOn(db_bitmap, *new_extent_start + i);
+                    sb->free_dblock_count--;
 
                     // Register the block as a count in the extent
                     file_extent[cur->ext_count - 1].count++;
@@ -1944,6 +1945,7 @@ static int a1fs_truncate(const char *path, off_t size)
                         block_index = last_extent.start + last_extent.count;
                         setBitOff(db_bitmap, block_index);
                         file_extent[cur->ext_count - 1].count--;
+                        sb->free_dblock_count++;
                     }
 
                     // If all needed bytes are removed, break the loop
