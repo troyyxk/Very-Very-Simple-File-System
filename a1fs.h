@@ -127,7 +127,7 @@ typedef struct a1fs_inode
 	/** File mode. */
 	mode_t mode;
 	/** Reference count (number of hard links). */
-	uint64_t links;
+	uint32_t links;
 	/** File size in bytes. */
 	uint64_t size;
 
@@ -145,6 +145,7 @@ typedef struct a1fs_inode
 	long ext_block;
 	/** Number of Entry in a Directory. */
 	short dentry_count;
+	char buf[7];
 } a1fs_inode;
 
 // A single block must fit an integral number of inodes
