@@ -269,11 +269,7 @@ static bool mkfs(void *image, size_t size, mkfs_opts *opts)
 	// in byte
 	int n_iblock = ceil_division(n_inode * inode_size, A1FS_BLOCK_SIZE);
 
-	// int n_ib =  ceil((double)n_inode / ((double)A1FS_BLOCK_SIZE * 8));
-	// int n_db = ceil((double)n_block / ((double)A1FS_BLOCK_SIZE * 8));
-
 	// // in byte
-	// int n_iblock = ceil((double)n_inode * inode_size / (double)A1FS_BLOCK_SIZE);
 	// nubmer of data block is the total number of:
 	// super block
 	// inode bitmap block
